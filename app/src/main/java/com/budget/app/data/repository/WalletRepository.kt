@@ -1,0 +1,22 @@
+package com.budget.app.data.repository
+
+import com.budget.app.data.local.dao.WalletDao
+import com.budget.app.data.local.entity.WalletEntity
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class WalletRepository @Inject constructor(
+    private val walletDao: WalletDao
+) {
+    fun getAllWallets(): Flow<List<WalletEntity>> = walletDao.getAllWallets()
+
+    suspend fun getWalletById(id: Long): WalletEntity? = walletDao.getWalletById(id)
+
+    suspend fun insertWallet(wallet: WalletEntity): Long = walletDao.insertWallet(wallet)
+
+    suspend fun updateWallet(wallet: WalletEntity) = walletDao.updateWallet(wallet)
+
+    suspend fun deleteWallet(wallet: WalletEntity) = walletDao.deleteWallet(wallet)
+}

@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Бюджет</string>
+
+    <!-- Экраны -->
+    <string name="screen_expenses">Расходы</string>
+    <string name="screen_income">Приход</string>
+    <string name="screen_wallets">Кошельки</string>
+    <string name="screen_analytics">Аналитика</string>
+
+    <!-- Категории -->
+    <string name="category_food">Продукты</string>
+    <string name="category_transport">Транспорт</string>
+    <string name="category_housing">Жильё</string>
+    <string name="category_cafe">Кафе</string>
+    <string name="category_health">Здоровье</string>
+    <string name="category_entertainment">Развлечения</string>
+    <string name="category_shopping">Покупки</string>
+    <string name="category_other">Прочее</string>
+
+    <!-- Кошельки -->
+    <string name="wallet_cash">Наличные</string>
+    <string name="wallet_card">Карта</string>
+</resources>
