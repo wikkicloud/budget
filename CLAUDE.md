@@ -34,6 +34,9 @@
 - Тесты: `./gradlew test`
 - Установка на устройство: `adb install -r app/build/outputs/apk/debug/app-debug.apk`
 
+## ОС
+- Windows. Gradle запускать как .\gradlew.bat, без tail, grep и других unix-утилит. В PowerShell использовать Select-Object -Last N».
+
 ## Процесс работы
 - Небольшими шагами: после каждого шага запускай `./gradlew assembleDebug` и исправляй ошибки.
 - Не пиши следующую функцию, пока сборка красная.
