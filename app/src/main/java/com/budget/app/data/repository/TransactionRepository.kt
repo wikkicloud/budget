@@ -2,6 +2,7 @@ package com.budget.app.data.repository
 
 import com.budget.app.data.local.dao.TransactionDao
 import com.budget.app.data.local.entity.TransactionEntity
+import com.budget.app.data.local.model.ExpenseWithDetails
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -11,6 +12,10 @@ class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao
 ) {
     fun getAllTransactions(): Flow<List<TransactionEntity>> = transactionDao.getAllTransactions()
+
+    /** Расходы вместе с названиями кошелька и категории — для списка на экране. */
+    fun getExpensesWithDetails(): Flow<List<ExpenseWithDetails>> =
+        transactionDao.getExpensesWithDetails()
 
     fun getTransactionsByWallet(walletId: Long): Flow<List<TransactionEntity>> =
         transactionDao.getTransactionsByWallet(walletId)
@@ -32,6 +37,8 @@ class TransactionRepository @Inject constructor(
 
     suspend fun deleteTransaction(transaction: TransactionEntity) =
         transactionDao.deleteTransaction(transaction)
+
+    suspend fun deleteTransactionById(id: Long) = transactionDao.deleteTransactionById(id)
 
     suspend fun getTotalIncomeForWallet(walletId: Long): Long =
         transactionDao.getTotalIncomeForWallet(walletId) ?: 0L

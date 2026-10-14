@@ -35,6 +35,25 @@
     <string name="wallets_empty">Кошельков пока нет</string>
     <string name="wallets_empty_hint">Нажмите «+», чтобы добавить первый кошелёк</string>
 
+    <!-- Расходы -->
+    <string name="expense_title">Расходы</string>
+    <string name="expense_amount">Сумма</string>
+    <string name="expense_description">Описание</string>
+    <string name="expense_category">Категория</string>
+    <string name="expense_category_none">Без категории</string>
+    <string name="expense_wallet">Кошелёк</string>
+    <string name="expense_wallet_none">Не выбран</string>
+    <string name="expense_save">Сохранить</string>
+    <string name="expense_error_amount">Введите сумму больше нуля</string>
+    <string name="expense_error_wallet">Выберите кошелёк</string>
+    <string name="expense_deleted">Расход удалён</string>
+    <string name="expense_delete_title">Удалить расход?</string>
+    <string name="expense_delete_message">Расход на %1$s будет удалён.</string>
+    <string name="expenses_empty">Расходов пока нет</string>
+    <string name="expenses_recent">Последние расходы</string>
+    <string name="expense_edit_title">Редактировать расход</string>
+    <string name="expense_no_description">Без описания</string>
+
     <!-- Общие действия -->
     <string name="action_save">Сохранить</string>
     <string name="action_cancel">Отмена</string>
