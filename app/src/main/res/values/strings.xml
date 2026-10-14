@@ -20,4 +20,24 @@
     <!-- Кошельки -->
     <string name="wallet_cash">Наличные</string>
     <string name="wallet_card">Карта</string>
+    <string name="wallets_total">Всего на всех кошельках</string>
+    <string name="wallet_add">Добавить кошелёк</string>
+    <string name="wallet_new_title">Новый кошелёк</string>
+    <string name="wallet_edit_title">Редактировать кошелёк</string>
+    <string name="wallet_name">Название</string>
+    <string name="wallet_type">Тип</string>
+    <string name="wallet_initial_balance">Начальная сумма</string>
+    <string name="wallet_delete_title">Удалить кошелёк?</string>
+    <string name="wallet_delete_message">Кошелёк «%1$s» будет удалён.</string>
+    <string name="wallet_delete_has_transactions">Нельзя удалить кошелёк «%1$s»: по нему есть операции</string>
+    <string name="wallet_error_name">Введите название</string>
+    <string name="wallet_error_amount">Введите сумму без отрицательных значений</string>
+    <string name="wallets_empty">Кошельков пока нет</string>
+    <string name="wallets_empty_hint">Нажмите «+», чтобы добавить первый кошелёк</string>
+
+    <!-- Общие действия -->
+    <string name="action_save">Сохранить</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_edit">Редактировать</string>
 </resources>
