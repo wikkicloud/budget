@@ -54,6 +54,23 @@
     <string name="expense_edit_title">Редактировать расход</string>
     <string name="expense_no_description">Без описания</string>
 
+    <!-- Приходы -->
+    <string name="income_title">Приход</string>
+    <string name="income_amount">Сумма</string>
+    <string name="income_description">Описание</string>
+    <string name="income_wallet">Кошелёк</string>
+    <string name="income_wallet_none">Не выбран</string>
+    <string name="income_save">Сохранить</string>
+    <string name="income_error_amount">Введите сумму больше нуля</string>
+    <string name="income_error_wallet">Выберите кошелёк</string>
+    <string name="income_deleted">Приход удалён</string>
+    <string name="income_delete_title">Удалить приход?</string>
+    <string name="income_delete_message">Приход на %1$s будет удалён.</string>
+    <string name="incomes_empty">Приходов пока нет</string>
+    <string name="incomes_recent">Последние приходы</string>
+    <string name="income_no_description">Без описания</string>
+    <string name="income_saved">Приход добавлен</string>
+
     <!-- Общие действия -->
     <string name="action_save">Сохранить</string>
     <string name="action_cancel">Отмена</string>
