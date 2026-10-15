@@ -42,6 +42,21 @@ object MoneyFormatter {
     }
 
     /**
+     * Форматирует сумму из копеек без копеек — для подписей осей и компактных мест.
+     * @param amountInKopecks сумма в копейках
+     * @return строка вида "1 235 ₽"
+     */
+    fun formatRubles(amountInKopecks: Long): String {
+        // Округление до целых рублей, половина — вверх
+        val rubles = if (amountInKopecks >= 0) {
+            (amountInKopecks + 50) / 100
+        } else {
+            -((-amountInKopecks + 50) / 100)
+        }
+        return "${formatPlain(rubles * 100).substringBefore(',')} $CURRENCY"
+    }
+
+    /**
      * Разбирает введённую сумму в копейки. Без Double/Float — только целые.
      * Принимает "1234", "1 234,50", "1234.5".
      * @return сумма в копейках или null, если ввод не является числом

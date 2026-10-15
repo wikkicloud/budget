@@ -8,6 +8,7 @@ import androidx.room.Update
 import com.budget.app.data.local.entity.TransactionEntity
 import com.budget.app.data.local.model.ExpenseWithDetails
 import com.budget.app.data.local.model.IncomeWithDetails
+import com.budget.app.data.local.model.TransactionWithDetails
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -37,6 +38,22 @@ interface TransactionDao {
         """
     )
     fun getIncomesWithDetails(): Flow<List<IncomeWithDetails>>
+
+    /** Все операции за период вместе с кошельком и категорией — для аналитики. */
+    @Query(
+        """
+        SELECT t.id, t.type, t.amount, t.date,
+            t.categoryId, c.name AS categoryName, c.icon AS categoryIcon,
+            c.color AS categoryColor,
+            t.walletId, w.name AS walletName
+        FROM transactions t
+        INNER JOIN wallets w ON w.id = t.walletId
+        LEFT JOIN categories c ON c.id = t.categoryId
+        WHERE t.date >= :from AND t.date < :to
+        ORDER BY t.date DESC, t.id DESC
+        """
+    )
+    fun getTransactionsWithDetails(from: Long, to: Long): Flow<List<TransactionWithDetails>>
 
     @Query("SELECT * FROM transactions ORDER BY date DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>

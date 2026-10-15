@@ -71,6 +71,34 @@
     <string name="income_no_description">Без описания</string>
     <string name="income_saved">Приход добавлен</string>
 
+    <!-- Аналитика -->
+    <string name="analytics_period">Период</string>
+    <string name="analytics_period_week">Неделя</string>
+    <string name="analytics_period_month">Месяц</string>
+    <string name="analytics_period_year">Год</string>
+    <string name="analytics_period_custom">Диапазон</string>
+    <string name="analytics_total_expense">Итого расходов</string>
+    <string name="analytics_total_income">Итого доходов</string>
+    <string name="analytics_difference">Разница</string>
+    <string name="analytics_by_category">Расходы по категориям</string>
+    <string name="analytics_dynamics">Доходы и расходы</string>
+    <string name="analytics_dynamics_days">по дням</string>
+    <string name="analytics_dynamics_months">по месяцам</string>
+    <string name="analytics_legend_income">Доходы</string>
+    <string name="analytics_legend_expense">Расходы</string>
+    <string name="analytics_by_wallet">Расходы по кошелькам</string>
+    <string name="analytics_empty">За этот период операций нет</string>
+    <string name="analytics_empty_hint">Добавьте приход или расход — здесь появится аналитика</string>
+    <string name="analytics_no_expenses">Расходов за период нет</string>
+    <string name="analytics_no_category">Без категории</string>
+    <string name="analytics_period_range">%1$s — %2$s</string>
+    <string name="analytics_custom_title">Выберите диапазон</string>
+    <string name="analytics_custom_from">Начало</string>
+    <string name="analytics_custom_to">Конец</string>
+    <string name="analytics_custom_apply">Применить</string>
+    <string name="analytics_error_range">Укажите диапазон в формате ДД.ММ.ГГГГ</string>
+    <string name="analytics_error_range_order">Начало позже конца — диапазон будет переставлен</string>
+
     <!-- Общие действия -->
     <string name="action_save">Сохранить</string>
     <string name="action_cancel">Отмена</string>

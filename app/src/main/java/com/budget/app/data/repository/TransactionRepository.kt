@@ -4,6 +4,7 @@ import com.budget.app.data.local.dao.TransactionDao
 import com.budget.app.data.local.entity.TransactionEntity
 import com.budget.app.data.local.model.ExpenseWithDetails
 import com.budget.app.data.local.model.IncomeWithDetails
+import com.budget.app.data.local.model.TransactionWithDetails
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,6 +22,10 @@ class TransactionRepository @Inject constructor(
     /** Приходы вместе с названием кошелька — для списка на экране. */
     fun getIncomesWithDetails(): Flow<List<IncomeWithDetails>> =
         transactionDao.getIncomesWithDetails()
+
+    /** Операции за период [from, to) вместе с кошельком и категорией — для аналитики. */
+    fun getTransactionsWithDetails(from: Long, to: Long): Flow<List<TransactionWithDetails>> =
+        transactionDao.getTransactionsWithDetails(from, to)
 
     fun getTransactionsByWallet(walletId: Long): Flow<List<TransactionEntity>> =
         transactionDao.getTransactionsByWallet(walletId)
