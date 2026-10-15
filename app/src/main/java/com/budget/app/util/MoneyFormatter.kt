@@ -26,19 +26,11 @@ object MoneyFormatter {
      * @return строка вида "1 234,50"
      */
     fun formatPlain(amountInKopecks: Long): String {
-        // abs(Long.MIN_VALUE) переполнился бы, поэтому ужимаем его на единицу
-        val absolute = if (amountInKopecks == Long.MIN_VALUE) Long.MAX_VALUE else abs(amountInKopecks)
-        val sign = if (amountInKopecks < 0) "-" else ""
+        // Делим с сохранением знака: abs(Long.MIN_VALUE) переполнился бы, а рублёвая часть после / 100 — нет
+        val rubles = amountInKopecks / 100
+        val kopecks = abs(amountInKopecks % 100)
 
-        val groupedRubles = (absolute / 100).toString()
-            .reversed()
-            .chunked(3)
-            .joinToString(" ")
-            .reversed()
-
-        val kopecks = (absolute % 100).toString().padStart(2, '0')
-
-        return "$sign$groupedRubles,$kopecks"
+        return "${signOf(amountInKopecks)}${group(abs(rubles))},${kopecks.toString().padStart(2, '0')}"
     }
 
     /**
@@ -47,14 +39,27 @@ object MoneyFormatter {
      * @return строка вида "1 235 ₽"
      */
     fun formatRubles(amountInKopecks: Long): String {
-        // Округление до целых рублей, половина — вверх
-        val rubles = if (amountInKopecks >= 0) {
-            (amountInKopecks + 50) / 100
+        // Округление до целых рублей, половина — от нуля
+        val rubles = amountInKopecks / 100
+        val kopecks = amountInKopecks % 100
+        val rounded = if (abs(kopecks) >= 50) {
+            rubles + if (amountInKopecks >= 0) 1 else -1
         } else {
-            -((-amountInKopecks + 50) / 100)
+            rubles
         }
-        return "${formatPlain(rubles * 100).substringBefore(',')} $CURRENCY"
+        return "${signOf(amountInKopecks)}${group(abs(rounded))} $CURRENCY"
     }
+
+    /** Знак минуса, если сумма отрицательная. */
+    private fun signOf(amountInKopecks: Long): String =
+        if (amountInKopecks < 0) "-" else ""
+
+    /** Разбивает неотрицательное число на разряды по три: 1234567 -> "1 234 567". */
+    private fun group(value: Long): String = value.toString()
+        .reversed()
+        .chunked(3)
+        .joinToString(" ")
+        .reversed()
 
     /**
      * Разбирает введённую сумму в копейки. Без Double/Float — только целые.

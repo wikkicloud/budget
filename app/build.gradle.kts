@@ -46,6 +46,13 @@ android {
         compose = true
     }
 
+    testOptions {
+        unitTests {
+            // Robolectric прогоняет тесты Room на настоящем SQLite, ресурсы нужны для контекста
+            isIncludeAndroidResources = true
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -84,4 +91,9 @@ dependencies {
     // Vico Charts
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m3)
+
+    // Тесты (JVM + Robolectric: Room проверяем на настоящем SQLite без устройства)
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }
