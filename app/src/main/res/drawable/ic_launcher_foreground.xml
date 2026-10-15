@@ -1,0 +1,15 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Карта, торчащая из кошелька -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,32h24a5,5 0 0 1 5,5v12h-34v-12a5,5 0 0 1 5,-5z" />
+    <!-- Корпус кошелька; круг внутри — вырез под застёжку -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M34,46h40a6,6 0 0 1 6,6v18a6,6 0 0 1 -6,6h-40a6,6 0 0 1 -6,-6v-18a6,6 0 0 1 6,-6zM69,62m-5.5,0a5.5,5.5 0 1 0 11,0a5.5,5.5 0 1 0 -11,0z" />
+</vector>

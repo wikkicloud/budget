@@ -99,6 +99,20 @@
     <string name="analytics_error_range">Укажите диапазон в формате ДД.ММ.ГГГГ</string>
     <string name="analytics_error_range_order">Начало позже конца — диапазон будет переставлен</string>
 
+    <!-- Месяцы (короткие подписи на графике) -->
+    <string name="month_jan">янв</string>
+    <string name="month_feb">фев</string>
+    <string name="month_mar">мар</string>
+    <string name="month_apr">апр</string>
+    <string name="month_may">май</string>
+    <string name="month_jun">июн</string>
+    <string name="month_jul">июл</string>
+    <string name="month_aug">авг</string>
+    <string name="month_sep">сен</string>
+    <string name="month_oct">окт</string>
+    <string name="month_nov">ноя</string>
+    <string name="month_dec">дек</string>
+
     <!-- Общие действия -->
     <string name="action_save">Сохранить</string>
     <string name="action_cancel">Отмена</string>

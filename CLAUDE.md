@@ -28,16 +28,23 @@
 - Один экран = один ViewModel с одним UiState.
 - Поддержка тёмной темы.
 
-## Команды
-- Сборка: `./gradlew assembleDebug`
-- Линт: `./gradlew lint`
-- Тесты: `./gradlew test`
-- Установка на устройство: `adb install -r app/build/outputs/apk/debug/app-debug.apk`
+## Версии и сборка (важно)
+- Gradle 9.5, AGP 9.x с встроенным Kotlin: плагин `org.jetbrains.kotlin.android` НЕ подключать.
+- Версию JVM задавать через верхнеуровневый `kotlin { compilerOptions { jvmTarget... } }`, не через `kotlinOptions`.
+- `compileSdk = 37`, `minSdk = 26`.
+- Версии библиотек — только в `gradle/libs.versions.toml`. Не понижай их и не бери версии из памяти: проверяй актуальные в release notes.
+- Vico 3.x: API отличается от 2.x, сверяйся с документацией.
 
-## ОС
-- Windows. Gradle запускать как .\gradlew.bat, без tail, grep и других unix-утилит. В PowerShell использовать Select-Object -Last N».
+## Команды
+- Сборка: `.\gradlew.bat assembleDebug`
+- Линт: `.\gradlew.bat lint`
+- Тесты: `.\gradlew.bat test`
+- Установка на устройство: `adb install -r app\build\outputs\apk\debug\app-debug.apk`
 
 ## Процесс работы
-- Небольшими шагами: после каждого шага запускай `./gradlew assembleDebug` и исправляй ошибки.
+- Начало сессии: прочитай CLAUDE.md и PROGRESS.md, сделай следующий шаг из PROGRESS.md. Не проси пересказ.
+- Небольшими шагами: после каждого шага запускай `.\gradlew.bat assembleDebug` и исправляй ошибки.
 - Не пиши следующую функцию, пока сборка красная.
 - Коммить после каждого рабочего шага.
+- Конец сессии: обнови PROGRESS.md (что сделано, что сломано, что дальше).
+- Экономь токены: читай только нужные файлы, не пересматривай весь проект без необходимости.

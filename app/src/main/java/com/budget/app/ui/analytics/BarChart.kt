@@ -52,7 +52,7 @@ fun IncomeExpenseBarChart(
     val labelStep = (points.size / MAX_LABELS).coerceAtLeast(1)
 
     val listState = rememberLazyListState()
-    // Показываем кон// Показываем конец периода — свежие интервалы информативнее
+    // Показываем конец периода — свежие интервалы информативнее
     LaunchedEffect(points) {
         listState.scrollToItem(points.lastIndex)
     }
@@ -178,9 +178,10 @@ private fun LegendMark(color: Color, label: String) {
 }
 
 /** Подпись под столбцом: день или месяц. */
+@Composable
 private fun bucketLabel(point: PeriodPoint, bucket: AnalyticsBucket): String = when (bucket) {
     AnalyticsBucket.DAY -> "%02d.%02d".format(point.date.dayOfMonth, point.date.monthValue)
-    AnalyticsBucket.MONTH -> MONTHS_SHORT[point.date.monthValue - 1]
+    AnalyticsBucket.MONTH -> stringResource(MONTHS_SHORT[point.date.monthValue - 1])
 }
 
 private val BAR_GROUP_WIDTH: Dp = 44.dp
@@ -190,6 +191,7 @@ private val CHART_HEIGHT: Dp = 140.dp
 private const val MAX_LABELS = 12
 
 private val MONTHS_SHORT = listOf(
-    "янв", "фев", "мар", "апр", "май", "июн",
-    "июл", "авг", "сен", "окт", "ноя", "дек"
+    R.string.month_jan, R.string.month_feb, R.string.month_mar, R.string.month_apr,
+    R.string.month_may, R.string.month_jun, R.string.month_jul, R.string.month_aug,
+    R.string.month_sep, R.string.month_oct, R.string.month_nov, R.string.month_dec
 )

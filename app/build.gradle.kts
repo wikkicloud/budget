@@ -17,7 +17,7 @@ android {
     defaultConfig {
         applicationId = "com.budget.app"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -87,10 +87,6 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
-
-    // Vico Charts
-    implementation(libs.vico.compose)
-    implementation(libs.vico.compose.m3)
 
     // Тесты (JVM + Robolectric: Room проверяем на настоящем SQLite без устройства)
     testImplementation(libs.junit)

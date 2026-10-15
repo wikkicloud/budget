@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.budget.app.R
 import com.budget.app.data.local.BudgetDatabase
 import com.budget.app.data.local.dao.CategoryDao
 import com.budget.app.data.local.dao.TransactionDao
@@ -49,23 +50,63 @@ object DatabaseModule {
                         // Предзаполнение категорий
                         categoryDao.insertCategories(
                             listOf(
-                                CategoryEntity(name = "Продукты", icon = "🛒", color = "#4CAF50"),
-                                CategoryEntity(name = "Транспорт", icon = "🚗", color = "#2196F3"),
-                                CategoryEntity(name = "Жильё", icon = "🏠", color = "#9C27B0"),
-                                CategoryEntity(name = "Кафе", icon = "☕", color = "#FF9800"),
-                                CategoryEntity(name = "Здоровье", icon = "💊", color = "#F44336"),
-                                CategoryEntity(name = "Развлечения", icon = "🎮", color = "#E91E63"),
-                                CategoryEntity(name = "Покупки", icon = "🛍️", color = "#00BCD4"),
-                                CategoryEntity(name = "Прочее", icon = "📌", color = "#9E9E9E")
+                                CategoryEntity(
+                                    name = context.getString(R.string.category_food),
+                                    icon = "🛒",
+                                    color = "#4CAF50"
+                                ),
+                                CategoryEntity(
+                                    name = context.getString(R.string.category_transport),
+                                    icon = "🚗",
+                                    color = "#2196F3"
+                                ),
+                                CategoryEntity(
+                                    name = context.getString(R.string.category_housing),
+                                    icon = "🏠",
+                                    color = "#9C27B0"
+                                ),
+                                CategoryEntity(
+                                    name = context.getString(R.string.category_cafe),
+                                    icon = "☕",
+                                    color = "#FF9800"
+                                ),
+                                CategoryEntity(
+                                    name = context.getString(R.string.category_health),
+                                    icon = "💊",
+                                    color = "#F44336"
+                                ),
+                                CategoryEntity(
+                                    name = context.getString(R.string.category_entertainment),
+                                    icon = "🎮",
+                                    color = "#E91E63"
+                                ),
+                                CategoryEntity(
+                                    name = context.getString(R.string.category_shopping),
+                                    icon = "🛍️",
+                                    color = "#00BCD4"
+                                ),
+                                CategoryEntity(
+                                    name = context.getString(R.string.category_other),
+                                    icon = "📌",
+                                    color = "#9E9E9E"
+                                )
                             )
                         )
 
                         // Предзаполнение кошельков
                         walletDao.insertWallet(
-                            WalletEntity(name = "Наличные", type = "CASH", initialBalance = 0)
+                            WalletEntity(
+                                name = context.getString(R.string.wallet_cash),
+                                type = "CASH",
+                                initialBalance = 0
+                            )
                         )
                         walletDao.insertWallet(
-                            WalletEntity(name = "Карта", type = "CARD", initialBalance = 0)
+                            WalletEntity(
+                                name = context.getString(R.string.wallet_card),
+                                type = "CARD",
+                                initialBalance = 0
+                            )
                         )
                     }
                 }

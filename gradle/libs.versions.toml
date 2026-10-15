@@ -9,7 +9,6 @@ room = "2.8.5"
 hilt = "2.60.1"
 hiltNavigationCompose = "1.4.0"
 navigationCompose = "2.10.2"
-vico = "3.3.1"
 ksp = "2.3.10"
 junit = "4.13.2"
 robolectric = "4.17"
@@ -37,10 +36,6 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
-
-# Vico Charts
-vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
-vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 
 # Тесты
 junit = { group = "junit", name = "junit", version.ref = "junit" }
