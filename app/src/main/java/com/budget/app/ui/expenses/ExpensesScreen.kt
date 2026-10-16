@@ -22,6 +22,35 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.LocalGasStation
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.LocalGroceryStore
+import androidx.compose.material.icons.filled.ChildFriendly
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.Celebration
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -66,7 +95,33 @@ private fun CategoryEntity.iconText(): String = iconKey ?: icon
 
 private fun categoryIcon(key: String) = when (key) {
     "restaurant" -> Icons.Filled.Restaurant
+    "local_cafe" -> Icons.Filled.LocalCafe
+    "shopping_cart" -> Icons.Filled.ShoppingCart
+    "directions_car" -> Icons.Filled.DirectionsCar
+    "home" -> Icons.Filled.Home
+    "favorite" -> Icons.Filled.Favorite
+    "health_and_safety" -> Icons.Filled.HealthAndSafety
+    "sports_esports" -> Icons.Filled.SportsEsports
+    "movie" -> Icons.Filled.Movie
+    "flight" -> Icons.Filled.Flight
+    "school" -> Icons.Filled.School
+    "work" -> Icons.Filled.Work
+    "pets" -> Icons.Filled.Pets
+    "local_gas_station" -> Icons.Filled.LocalGasStation
     "build" -> Icons.Filled.Build
+    "phone" -> Icons.Filled.Phone
+    "wifi" -> Icons.Filled.Wifi
+    "fitness_center" -> Icons.Filled.FitnessCenter
+    "local_hospital" -> Icons.Filled.LocalHospital
+    "local_grocery_store" -> Icons.Filled.LocalGroceryStore
+    "child_friendly" -> Icons.Filled.ChildFriendly
+    "music_note" -> Icons.Filled.MusicNote
+    "book" -> Icons.Filled.Book
+    "camera_alt" -> Icons.Filled.CameraAlt
+    "cake" -> Icons.Filled.Cake
+    "celebration" -> Icons.Filled.Celebration
+    "payments" -> Icons.Filled.Payments
+    "savings" -> Icons.Filled.Savings
     else -> Icons.Filled.MoreHoriz
 }
 
