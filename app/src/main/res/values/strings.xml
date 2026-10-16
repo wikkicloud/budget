@@ -73,10 +73,10 @@
 
     <!-- Аналитика -->
     <string name="analytics_period">Период</string>
-    <string name="analytics_period_week">Неделя</string>
-    <string name="analytics_period_month">Месяц</string>
+    <string name="analytics_period_week">7д</string>
+    <string name="analytics_period_month">Мес</string>
     <string name="analytics_period_year">Год</string>
-    <string name="analytics_period_custom">Диапазон</string>
+    <string name="analytics_period_custom">Период</string>
     <string name="analytics_total_expense">Итого расходов</string>
     <string name="analytics_total_income">Итого доходов</string>
     <string name="analytics_difference">Разница</string>

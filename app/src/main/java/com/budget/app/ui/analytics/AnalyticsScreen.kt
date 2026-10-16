@@ -14,10 +14,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarViewMonth
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.ViewWeek
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -34,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -198,7 +205,14 @@ private fun PeriodSwitcher(
                         activeContentColor = analytics.onAccentContainer,
                         activeBorderColor = analytics.accent,
                         inactiveBorderColor = analytics.surfaceVariant
-                    )
+                    ),
+                    icon = {
+                        Icon(
+                            imageVector = period.icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 ) {
                     Text(
                         text = stringResource(period.labelRes),
@@ -494,4 +508,13 @@ private val AnalyticsPeriod.labelRes: Int
         AnalyticsPeriod.MONTH -> R.string.analytics_period_month
         AnalyticsPeriod.YEAR -> R.string.analytics_period_year
         AnalyticsPeriod.CUSTOM -> R.string.analytics_period_custom
+    }
+
+/** Иконка периода для переключателя. */
+private val AnalyticsPeriod.icon: ImageVector
+    get() = when (this) {
+        AnalyticsPeriod.WEEK -> Icons.Filled.ViewWeek
+        AnalyticsPeriod.MONTH -> Icons.Filled.CalendarViewMonth
+        AnalyticsPeriod.YEAR -> Icons.Filled.Today
+        AnalyticsPeriod.CUSTOM -> Icons.Filled.DateRange
     }
