@@ -41,6 +41,11 @@
     <string name="expense_description">Описание</string>
     <string name="expense_category">Категория</string>
     <string name="expense_category_none">Без категории</string>
+    <string name="category_add">Добавить категорию</string>
+    <string name="category_new_title">Новая категория</string>
+    <string name="category_icon">Иконка</string>
+    <string name="category_error_name">Введите название категории</string>
+    <string name="category_error_duplicate">Категория с таким названием уже есть</string>
     <string name="expense_wallet">Кошелёк</string>
     <string name="expense_wallet_none">Не выбран</string>
     <string name="expense_save">Сохранить</string>

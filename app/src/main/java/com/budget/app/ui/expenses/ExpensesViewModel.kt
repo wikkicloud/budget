@@ -67,9 +67,29 @@ data class ExpensesUiState(
     val deleteTarget: ExpenseUi? = null,
     /** true — форма показывает редактирование существующего расхода. */
     val isEditing: Boolean = false,
+    /** Диалог добавления собственной категории. */
+    val isCategoryDialogVisible: Boolean = false,
+    val newCategory: NewCategoryState = NewCategoryState(),
     /** Разовое сообщение для Snackbar. */
     val messageRes: Int? = null
 )
+
+data class NewCategoryState(
+    val name: String = "",
+    val iconKey: String = CategoryIconOptions.defaultKey,
+    @StringRes val errorRes: Int? = null
+)
+
+object CategoryIconOptions {
+    const val defaultKey = "restaurant"
+    val keys = listOf(
+        "restaurant", "local_cafe", "shopping_cart", "directions_car", "home", "favorite",
+        "health_and_safety", "sports_esports", "movie", "flight", "school", "work",
+        "pets", "local_gas_station", "build", "phone", "wifi", "fitness_center",
+        "local_hospital", "local_grocery_store", "child_friendly", "music_note", "book",
+        "camera_alt", "beach_access", "cake", "celebration", "payments", "savings", "more_horiz"
+    )
+}
 
 @HiltViewModel
 class ExpensesViewModel @Inject constructor(
@@ -96,6 +116,7 @@ class ExpensesViewModel @Inject constructor(
             form = local.form,
             deleteTarget = local.deleteTargetId?.let { id -> mapped.firstOrNull { it.id == id } },
             isEditing = local.form.isEditing,
+            isCategoryDialogVisible = local.isCategoryDialogVisible,
             messageRes = local.messageRes
         )
     }.stateIn(
@@ -116,6 +137,51 @@ class ExpensesViewModel @Inject constructor(
 
     fun onCategorySelect(categoryId: Long?) {
         localState.update { it.copy(form = it.form.copy(categoryId = categoryId)) }
+    }
+
+    fun onAddCategoryClick() {
+        localState.update { it.copy(isCategoryDialogVisible = true, newCategory = NewCategoryState()) }
+    }
+
+    fun onCategoryDialogDismiss() {
+        localState.update { it.copy(isCategoryDialogVisible = false) }
+    }
+
+    fun onNewCategoryNameChange(name: String) {
+        localState.update { it.copy(newCategory = it.newCategory.copy(name = name, errorRes = null)) }
+    }
+
+    fun onNewCategoryIconSelect(iconKey: String) {
+        localState.update { it.copy(newCategory = it.newCategory.copy(iconKey = iconKey)) }
+    }
+
+    fun onNewCategorySave() {
+        val category = localState.value.newCategory
+        val name = category.name.trim()
+        if (name.isEmpty()) {
+            localState.update { it.copy(newCategory = category.copy(errorRes = R.string.category_error_name)) }
+            return
+        }
+        viewModelScope.launch {
+            val id = categoryRepository.addCategoryIfNameIsAvailable(
+                name = name,
+                iconKey = category.iconKey,
+                color = "#9C7CFF"
+            )
+            if (id == null) {
+                localState.update {
+                    it.copy(newCategory = category.copy(errorRes = R.string.category_error_duplicate))
+                }
+            } else {
+                localState.update {
+                    it.copy(
+                        isCategoryDialogVisible = false,
+                        newCategory = NewCategoryState(),
+                        form = it.form.copy(categoryId = id)
+                    )
+                }
+            }
+        }
     }
 
     fun onWalletSelect(walletId: Long?) {
@@ -222,5 +288,7 @@ class ExpensesViewModel @Inject constructor(
 private data class ExpensesLocalState(
     val form: ExpenseFormState = ExpenseFormState(),
     val deleteTargetId: Long? = null,
+    val isCategoryDialogVisible: Boolean = false,
+    val newCategory: NewCategoryState = NewCategoryState(),
     @StringRes val messageRes: Int? = null
 )

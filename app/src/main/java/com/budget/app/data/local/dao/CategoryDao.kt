@@ -16,4 +16,10 @@ interface CategoryDao {
 
     @Insert
     suspend fun insertCategories(categories: List<CategoryEntity>)
+
+    @Insert
+    suspend fun insertCategory(category: CategoryEntity): Long
+
+    @Query("SELECT EXISTS(SELECT 1 FROM categories WHERE LOWER(name) = LOWER(:name))")
+    suspend fun categoryNameExists(name: String): Boolean
 }

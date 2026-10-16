@@ -1,5 +1,6 @@
 package com.budget.app.ui.expenses
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,11 +14,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -58,6 +62,24 @@ import com.budget.app.domain.model.WalletType
 import com.budget.app.util.DateFormatter
 import com.budget.app.util.MoneyFormatter
 
+private fun CategoryEntity.iconText(): String = iconKey ?: icon
+
+private fun categoryIcon(key: String) = when (key) {
+    "restaurant" -> Icons.Filled.Restaurant
+    "build" -> Icons.Filled.Build
+    else -> Icons.Filled.MoreHoriz
+}
+
+private fun CategoryEntity.iconVector() = categoryIcon(iconKey ?: "more_horiz")
+
+private val categoryIconKeys = CategoryIconOptions.keys
+
+@Composable
+private fun CategoryIcon(key: String) {
+    Icon(categoryIcon(key), contentDescription = null)
+}
+
+
 @Composable
 fun ExpensesScreen(
     viewModel: ExpensesViewModel = hiltViewModel()
@@ -85,6 +107,7 @@ fun ExpensesScreen(
                     onAmountChange = viewModel::onAmountChange,
                     onDescriptionChange = viewModel::onDescriptionChange,
                     onCategorySelect = viewModel::onCategorySelect,
+                    onAddCategoryClick = viewModel::onAddCategoryClick,
                     onWalletSelect = viewModel::onWalletSelect,
                     onSave = viewModel::onSave,
                     onCancelEdit = viewModel::onCancelEdit
@@ -131,6 +154,16 @@ fun ExpensesScreen(
             onDismiss = viewModel::onDeleteDismiss
         )
     }
+
+    if (state.isCategoryDialogVisible) {
+        NewCategoryDialog(
+            state = state,
+            onNameChange = viewModel::onNewCategoryNameChange,
+            onIconSelect = viewModel::onNewCategoryIconSelect,
+            onSave = viewModel::onNewCategorySave,
+            onDismiss = viewModel::onCategoryDialogDismiss
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,6 +173,7 @@ private fun ExpenseFormCard(
     onAmountChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onCategorySelect: (Long?) -> Unit,
+    onAddCategoryClick: () -> Unit,
     onWalletSelect: (Long?) -> Unit,
     onSave: () -> Unit,
     onCancelEdit: () -> Unit
@@ -183,7 +217,8 @@ private fun ExpenseFormCard(
             CategoryDropdown(
                 selectedId = form.categoryId,
                 categories = state.categories,
-                onSelect = onCategorySelect
+                onSelect = onCategorySelect,
+                onAddCategoryClick = onAddCategoryClick
             )
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -220,11 +255,12 @@ private fun ExpenseFormCard(
 private fun CategoryDropdown(
     selectedId: Long?,
     categories: List<CategoryEntity>,
-    onSelect: (Long?) -> Unit
+    onSelect: (Long?) -> Unit,
+    onAddCategoryClick: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = categories.firstOrNull { it.id == selectedId }
-    val label = selected?.let { "${it.icon} ${it.name}" }
+    val label = selected?.let { "${it.iconText()} ${it.name}" }
         ?: stringResource(R.string.expense_category_none)
 
     ExposedDropdownMenuBox(
@@ -253,15 +289,69 @@ private fun CategoryDropdown(
             )
             categories.forEach { category ->
                 DropdownMenuItem(
-                    text = { Text("${category.icon} ${category.name}") },
+                    text = { Text("${category.iconText()} ${category.name}") },
                     onClick = {
                         onSelect(category.id)
                         expanded = false
                     }
                 )
             }
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.category_add)) },
+                leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                onClick = {
+                    onAddCategoryClick()
+                    expanded = false
+                }
+            )
         }
     }
+}
+
+@Composable
+private fun NewCategoryDialog(
+    state: ExpensesUiState,
+    onNameChange: (String) -> Unit,
+    onIconSelect: (String) -> Unit,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var categoryName by remember(state.isCategoryDialogVisible) {
+        mutableStateOf("")
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.category_new_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = categoryName,
+                    onValueChange = {
+                        categoryName = it
+                        onNameChange(it)
+                    },
+                    label = { Text(stringResource(R.string.wallet_name)) },
+                    singleLine = true,
+                    isError = state.newCategory.errorRes != null,
+                    supportingText = state.newCategory.errorRes?.let { { Text(stringResource(it)) } }
+                )
+                Text(stringResource(R.string.category_icon), style = MaterialTheme.typography.labelMedium)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    CategoryIconOptions.keys.chunked(6).forEach { rowKeys ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            rowKeys.forEach { key ->
+                                IconButton(onClick = { onIconSelect(key) }) {
+                                    CategoryIcon(key)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onSave) { Text(stringResource(R.string.action_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+    )
 }
 
 @Composable

@@ -13,4 +13,14 @@ class CategoryRepository @Inject constructor(
     fun getAllCategories(): Flow<List<CategoryEntity>> = categoryDao.getAllCategories()
 
     suspend fun getCategoryById(id: Long): CategoryEntity? = categoryDao.getCategoryById(id)
+
+    suspend fun categoryNameExists(name: String): Boolean = categoryDao.categoryNameExists(name)
+
+    suspend fun addCategoryIfNameIsAvailable(name: String, iconKey: String, color: String): Long? {
+        if (categoryNameExists(name)) return null
+        return categoryDao.insertCategory(
+            CategoryEntity(name = name, icon = iconKey, iconKey = iconKey, color = color)
+        )
+    }
+
 }

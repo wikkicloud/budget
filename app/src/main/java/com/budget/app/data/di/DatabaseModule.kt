@@ -3,6 +3,7 @@ package com.budget.app.data.di
 import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.budget.app.R
 import com.budget.app.data.local.BudgetDatabase
@@ -39,6 +40,11 @@ object DatabaseModule {
             BudgetDatabase::class.java,
             "budget_database"
         )
+            .addMigrations(object : Migration(1, 2) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE categories ADD COLUMN iconKey TEXT")
+                }
+            })
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)

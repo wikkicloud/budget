@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class CategoryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    val icon: String, // эмодзи
-    val color: String // hex цвета
+    val icon: String, // legacy emoji for built-in categories
+    val color: String, // hex цвета
+    val iconKey: String? = null
 )

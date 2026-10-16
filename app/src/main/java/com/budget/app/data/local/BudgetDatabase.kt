@@ -15,7 +15,7 @@ import com.budget.app.data.local.entity.WalletEntity
         CategoryEntity::class,
         TransactionEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class BudgetDatabase : RoomDatabase() {
