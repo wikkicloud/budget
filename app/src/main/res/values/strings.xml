@@ -2,8 +2,8 @@
     <string name="app_name">Бюджет</string>
 
     <!-- Экраны -->
-    <string name="screen_expenses">Расходы</string>
-    <string name="screen_income">Приход</string>
+    <string name="screen_expenses">Расход</string>
+    <string name="screen_income">Доход</string>
     <string name="screen_wallets">Кошельки</string>
     <string name="screen_analytics">Аналитика</string>
 
@@ -36,7 +36,7 @@
     <string name="wallets_empty_hint">Нажмите «+», чтобы добавить первый кошелёк</string>
 
     <!-- Расходы -->
-    <string name="expense_title">Расходы</string>
+    <string name="expense_title">Расход</string>
     <string name="expense_amount">Сумма</string>
     <string name="expense_description">Описание</string>
     <string name="expense_category">Категория</string>
@@ -55,7 +55,7 @@
     <string name="expense_no_description">Без описания</string>
 
     <!-- Приходы -->
-    <string name="income_title">Приход</string>
+    <string name="income_title">Доход</string>
     <string name="income_amount">Сумма</string>
     <string name="income_description">Описание</string>
     <string name="income_wallet">Кошелёк</string>
