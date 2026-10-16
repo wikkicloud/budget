@@ -19,18 +19,22 @@ import androidx.compose.material.icons.filled.CalendarViewMonth
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.ViewWeek
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DatePickerFormatter
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.DateRangePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.getSelectedEndDate
+import androidx.compose.material3.getSelectedStartDate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,10 +55,11 @@ import com.budget.app.domain.analytics.AnalyticsBucket
 import com.budget.app.domain.analytics.AnalyticsPeriod
 import com.budget.app.ui.theme.analyticsColors
 import com.budget.app.util.MoneyFormatter
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.time.format.ResolverStyle
+import java.util.Locale
 
 /** Экран «Аналитика»: итоги, расходы по категориям и динамика доходов и расходов. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -398,7 +403,8 @@ private fun EmptyState(modifier: Modifier = Modifier) {
     }
 }
 
-/** Диалог ввода произвольного диапазона в формате ДД.ММ.ГГГГ. */
+/** Диалог выбора произвольного диапазона: календарь Material 3 DateRangePicker. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CustomRangeDialog(
     initialFrom: LocalDate,
@@ -406,66 +412,27 @@ private fun CustomRangeDialog(
     onApply: (LocalDate, LocalDate) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var fromInput by remember { mutableStateOf(initialFrom.toDisplayDate()) }
-    var toInput by remember { mutableStateOf(initialTo.toDisplayDate()) }
-    var hasError by remember { mutableStateOf(false) }
+    val state = remember {
+        DateRangePickerState(
+            locale = RUSSIAN_LOCALE,
+            initialSelectedStartDate = initialFrom,
+            initialSelectedEndDate = initialTo
+        )
+    }
+    val start = state.getSelectedStartDate()
+    val end = state.getSelectedEndDate()
 
-    val from = parseDate(fromInput)
-    val to = parseDate(toInput)
-    val isReversed = from != null && to != null && from > to
-
-    AlertDialog(
+    DatePickerDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.analytics_custom_title)) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = fromInput,
-                    onValueChange = {
-                        fromInput = it
-                        hasError = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.analytics_custom_from)) },
-                    singleLine = true,
-                    isError = hasError
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = toInput,
-                    onValueChange = {
-                        toInput = it
-                        hasError = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.analytics_custom_to)) },
-                    singleLine = true,
-                    isError = hasError || isReversed,
-                    supportingText = when {
-                        hasError -> {
-                            { Text(stringResource(R.string.analytics_error_range)) }
-                        }
-
-                        isReversed -> {
-                            { Text(stringResource(R.string.analytics_error_range_order)) }
-                        }
-
-                        else -> null
-                    }
-                )
-            }
-        },
         confirmButton = {
             TextButton(
                 onClick = {
-                    if (from != null && to != null) {
-                        onApply(minOf(from, to), maxOf(from, to))
-                    } else {
-                        hasError = true
+                    if (start != null) {
+                        // Одна выбранная дата — диапазон из одного дня
+                        onApply(start, end ?: start)
                     }
-                }
+                },
+                enabled = start != null
             ) {
                 Text(stringResource(R.string.analytics_custom_apply))
             }
@@ -475,31 +442,57 @@ private fun CustomRangeDialog(
                 Text(stringResource(R.string.action_cancel))
             }
         }
-    )
+    ) {
+        DateRangePicker(
+            state = state,
+            showModeToggle = false,
+            dateFormatter = remember { RussianDateFormatter },
+            title = {
+                Text(
+                    text = stringResource(R.string.analytics_custom_title),
+                    modifier = Modifier.padding(start = 24.dp, top = 16.dp, end = 24.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }
 
 /** Дата в виде ДД.ММ.ГГГГ. */
 private fun LocalDate.toDisplayDate(): String = format(DISPLAY_DATE_FORMAT)
 
-/** Разбор введённой даты; допускаем и "1.2.2026", и "01.02.2026". */
-private fun parseDate(input: String): LocalDate? {
-    val trimmed = input.trim()
+private val RUSSIAN_LOCALE: Locale = Locale.forLanguageTag("ru")
 
-    for (pattern in INPUT_DATE_PATTERNS) {
-        try {
-            return LocalDate.parse(trimmed, pattern)
-        } catch (_: DateTimeParseException) {
-            // Пробуем следующий формат
-        }
+private val DISPLAY_DATE_FORMAT: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("dd.MM.uuuu", RUSSIAN_LOCALE)
+
+/** Формат дат в календаре: ДД.ММ.ГГГГ, русская локаль. */
+private object RussianDateFormatter : DatePickerFormatter {
+    private val dateFormat = DateTimeFormatter.ofPattern("dd.MM.uuuu", RUSSIAN_LOCALE)
+    private val monthYearFormat = DateTimeFormatter.ofPattern("LLLL uuuu", RUSSIAN_LOCALE)
+
+    override fun formatMonthYear(monthMillis: Long?, locale: Locale): String? {
+        if (monthMillis == null) return null
+        return Instant.ofEpochMilli(monthMillis)
+            .atZone(ZoneOffset.UTC)
+            .toLocalDate()
+            .format(monthYearFormat)
     }
 
-    return null
+    override fun formatDate(
+        dateMillis: Long?,
+        locale: Locale,
+        forContentDescription: Boolean
+    ): String? {
+        if (dateMillis == null) return null
+        return Instant.ofEpochMilli(dateMillis)
+            .atZone(ZoneOffset.UTC)
+            .toLocalDate()
+            .format(dateFormat)
+    }
 }
-
-private val DISPLAY_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.uuuu")
-
-private val INPUT_DATE_PATTERNS: List<DateTimeFormatter> = listOf("dd.MM.uuuu", "d.M.uuuu")
-    .map { DateTimeFormatter.ofPattern(it).withResolverStyle(ResolverStyle.STRICT) }
 
 /** Подпись периода для переключателя. */
 private val AnalyticsPeriod.labelRes: Int

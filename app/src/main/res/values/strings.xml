@@ -93,11 +93,7 @@
     <string name="analytics_no_category">Без категории</string>
     <string name="analytics_period_range">%1$s — %2$s</string>
     <string name="analytics_custom_title">Выберите диапазон</string>
-    <string name="analytics_custom_from">Начало</string>
-    <string name="analytics_custom_to">Конец</string>
     <string name="analytics_custom_apply">Применить</string>
-    <string name="analytics_error_range">Укажите диапазон в формате ДД.ММ.ГГГГ</string>
-    <string name="analytics_error_range_order">Начало позже конца — диапазон будет переставлен</string>
 
     <!-- Месяцы (короткие подписи на графике) -->
     <string name="month_jan">янв</string>
