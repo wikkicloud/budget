@@ -9,6 +9,7 @@ data class ExpenseWithDetails(
     val categoryId: Long?,
     val categoryName: String?,
     val categoryIcon: String?,
+    val categoryColor: String?,
     val walletId: Long,
     val walletName: String,
     val walletType: String

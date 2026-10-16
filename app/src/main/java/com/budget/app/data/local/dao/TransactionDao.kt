@@ -16,7 +16,8 @@ interface TransactionDao {
     @Query(
         """
         SELECT t.id, t.amount, t.description, t.date,
-            t.categoryId, c.name AS categoryName, c.icon AS categoryIcon,
+            t.categoryId, c.name AS categoryName, COALESCE(c.iconKey, c.icon) AS categoryIcon,
+            c.color AS categoryColor,
             t.walletId, w.name AS walletName, w.type AS walletType
         FROM transactions t
         INNER JOIN wallets w ON w.id = t.walletId
@@ -43,7 +44,7 @@ interface TransactionDao {
     @Query(
         """
         SELECT t.id, t.type, t.amount, t.date,
-            t.categoryId, c.name AS categoryName, c.icon AS categoryIcon,
+            t.categoryId, c.name AS categoryName, COALESCE(c.iconKey, c.icon) AS categoryIcon,
             c.color AS categoryColor,
             t.walletId, w.name AS walletName
         FROM transactions t

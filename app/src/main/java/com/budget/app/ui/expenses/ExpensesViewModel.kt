@@ -32,8 +32,12 @@ data class ExpenseUi(
     val date: Long,
     /** null — расход без категории. */
     val categoryId: Long?,
-    /** Подпись категории (имя + иконка) или null, если категории нет. */
-    val categoryLabel: String?,
+    /** Название категории или null, если категории нет. */
+    val categoryName: String?,
+    /** Ключ или legacy-эмодзи иконки категории. */
+    val categoryIconKey: String?,
+    /** Hex-цвет категории для иконки. */
+    val categoryColor: String?,
     val walletId: Long,
     val walletName: String
 )
@@ -82,13 +86,45 @@ data class NewCategoryState(
 
 object CategoryIconOptions {
     const val defaultKey = "restaurant"
-    val keys = listOf(
-        "restaurant", "local_cafe", "shopping_cart", "directions_car", "home", "favorite",
-        "health_and_safety", "sports_esports", "movie", "flight", "school", "work",
-        "pets", "local_gas_station", "build", "phone", "wifi", "fitness_center",
-        "local_hospital", "local_grocery_store", "child_friendly", "music_note", "book",
-        "camera_alt", "beach_access", "cake", "celebration", "payments", "savings", "more_horiz"
+
+    /** Ключ иконки и цвет по умолчанию для неё. */
+    val options: List<Pair<String, String>> = listOf(
+        "restaurant" to "#FF9800",
+        "local_cafe" to "#795548",
+        "shopping_cart" to "#4CAF50",
+        "directions_car" to "#2196F3",
+        "home" to "#9C27B0",
+        "favorite" to "#F44336",
+        "health_and_safety" to "#F44336",
+        "sports_esports" to "#E91E63",
+        "movie" to "#673AB7",
+        "flight" to "#03A9F4",
+        "school" to "#3F51B5",
+        "work" to "#607D8B",
+        "pets" to "#FF5722",
+        "local_gas_station" to "#607D8B",
+        "build" to "#FF9800",
+        "phone" to "#00BCD4",
+        "wifi" to "#03A9F4",
+        "fitness_center" to "#4CAF50",
+        "local_hospital" to "#F44336",
+        "local_grocery_store" to "#4CAF50",
+        "child_friendly" to "#E91E63",
+        "music_note" to "#9C27B0",
+        "book" to "#3F51B5",
+        "camera_alt" to "#607D8B",
+        "cake" to "#EC407A",
+        "celebration" to "#AB47BC",
+        "payments" to "#66BB6A",
+        "savings" to "#26A69A",
+        "more_horiz" to "#9E9E9E"
     )
+
+    val keys: List<String> get() = options.map { it.first }
+
+    /** Цвет по умолчанию для ключа иконки; null — если ключ неизвестен. */
+    fun colorFor(key: String?): String? =
+        key?.let { k -> options.firstOrNull { it.first == k }?.second }
 }
 
 @HiltViewModel
@@ -162,11 +198,12 @@ class ExpensesViewModel @Inject constructor(
             localState.update { it.copy(newCategory = category.copy(errorRes = R.string.category_error_name)) }
             return
         }
+        val color = CategoryIconOptions.colorFor(category.iconKey) ?: "#9C7CFF"
         viewModelScope.launch {
             val id = categoryRepository.addCategoryIfNameIsAvailable(
                 name = name,
                 iconKey = category.iconKey,
-                color = "#9C7CFF"
+                color = color
             )
             if (id == null) {
                 localState.update {
@@ -278,7 +315,9 @@ class ExpensesViewModel @Inject constructor(
         description = description,
         date = date,
         categoryId = categoryId,
-        categoryLabel = categoryName?.let { name -> "$categoryIcon $name" },
+        categoryName = categoryName,
+        categoryIconKey = categoryIcon,
+        categoryColor = categoryColor,
         walletId = walletId,
         walletName = walletName
     )

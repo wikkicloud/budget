@@ -1,9 +1,13 @@
 package com.budget.app.ui.expenses
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,56 +17,55 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.LocalCafe
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.HealthAndSafety
-import androidx.compose.material.icons.filled.SportsEsports
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.Flight
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material.icons.filled.LocalGasStation
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.LocalHospital
-import androidx.compose.material.icons.filled.LocalGroceryStore
-import androidx.compose.material.icons.filled.ChildFriendly
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Celebration
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChildFriendly
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.LocalGasStation
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.LocalGroceryStore
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
@@ -77,10 +80,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -88,20 +94,26 @@ import com.budget.app.R
 import com.budget.app.data.local.entity.CategoryEntity
 import com.budget.app.data.local.entity.WalletEntity
 import com.budget.app.domain.model.WalletType
+import com.budget.app.util.ColorFormatter
 import com.budget.app.util.DateFormatter
 import com.budget.app.util.MoneyFormatter
 
-private fun CategoryEntity.iconText(): String = iconKey ?: icon
+/** Цвет иконки по умолчанию, если у категории цвет не задан или не разобран. */
+private val DefaultCategoryIconColor = Color(0xFF9C7CFF)
 
-private fun categoryIcon(key: String) = when (key) {
-    "restaurant" -> Icons.Filled.Restaurant
-    "local_cafe" -> Icons.Filled.LocalCafe
-    "shopping_cart" -> Icons.Filled.ShoppingCart
-    "directions_car" -> Icons.Filled.DirectionsCar
-    "home" -> Icons.Filled.Home
+/**
+ * Иконка категории как вектор Material Icons.
+ * Для встроенных категорий [iconKey] null — ключ берётся из legacy-эмодзи.
+ */
+private fun categoryIcon(key: String?) = when (key.orEmpty()) {
+    "restaurant", "🍽️" -> Icons.Filled.Restaurant
+    "local_cafe", "☕" -> Icons.Filled.LocalCafe
+    "shopping_cart", "🛍️" -> Icons.Filled.ShoppingCart
+    "directions_car", "🚗" -> Icons.Filled.DirectionsCar
+    "home", "🏠" -> Icons.Filled.Home
     "favorite" -> Icons.Filled.Favorite
-    "health_and_safety" -> Icons.Filled.HealthAndSafety
-    "sports_esports" -> Icons.Filled.SportsEsports
+    "health_and_safety", "💊" -> Icons.Filled.HealthAndSafety
+    "sports_esports", "🎮" -> Icons.Filled.SportsEsports
     "movie" -> Icons.Filled.Movie
     "flight" -> Icons.Filled.Flight
     "school" -> Icons.Filled.School
@@ -113,25 +125,48 @@ private fun categoryIcon(key: String) = when (key) {
     "wifi" -> Icons.Filled.Wifi
     "fitness_center" -> Icons.Filled.FitnessCenter
     "local_hospital" -> Icons.Filled.LocalHospital
-    "local_grocery_store" -> Icons.Filled.LocalGroceryStore
+    "local_grocery_store", "🛒" -> Icons.Filled.LocalGroceryStore
     "child_friendly" -> Icons.Filled.ChildFriendly
     "music_note" -> Icons.Filled.MusicNote
-    "book" -> Icons.Filled.Book
+    "book" -> Icons.Filled.MenuBook
     "camera_alt" -> Icons.Filled.CameraAlt
     "cake" -> Icons.Filled.Cake
     "celebration" -> Icons.Filled.Celebration
     "payments" -> Icons.Filled.Payments
     "savings" -> Icons.Filled.Savings
+    "more_horiz", "📌" -> Icons.Filled.MoreHoriz
     else -> Icons.Filled.MoreHoriz
 }
 
-private fun CategoryEntity.iconVector() = categoryIcon(iconKey ?: "more_horiz")
+private fun CategoryEntity.iconVector() = categoryIcon(iconKey ?: icon)
 
-private val categoryIconKeys = CategoryIconOptions.keys
+/** Цвет иконки категории: цвет по умолчанию для ключа, иначе сохранённый color. */
+private fun CategoryEntity.iconColor(): Color {
+    CategoryIconOptions.colorFor(iconKey)?.let { return ColorFormatter.parse(it, DefaultCategoryIconColor) }
+    return ColorFormatter.parse(color, DefaultCategoryIconColor)
+}
 
+/** Кружок с цветной иконкой категории. */
 @Composable
-private fun CategoryIcon(key: String) {
-    Icon(categoryIcon(key), contentDescription = null)
+private fun CategoryIconBadge(
+    vector: ImageVector,
+    color: Color,
+    size: Dp,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .background(color.copy(alpha = 0.15f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = vector,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(size * 0.6f)
+        )
+    }
 }
 
 
@@ -315,8 +350,6 @@ private fun CategoryDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = categories.firstOrNull { it.id == selectedId }
-    val label = selected?.let { "${it.iconText()} ${it.name}" }
-        ?: stringResource(R.string.expense_category_none)
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -324,13 +357,23 @@ private fun CategoryDropdown(
         modifier = Modifier.fillMaxWidth()
     ) {
         OutlinedTextField(
-            value = label,
+            value = selected?.name ?: "",
             onValueChange = {},
             readOnly = true,
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth(),
             label = { Text(stringResource(R.string.expense_category)) },
+            placeholder = { Text(stringResource(R.string.expense_category_none)) },
+            leadingIcon = selected?.let { category ->
+                {
+                    CategoryIconBadge(
+                        vector = category.iconVector(),
+                        color = category.iconColor(),
+                        size = 32.dp
+                    )
+                }
+            },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
         )
 
@@ -344,7 +387,14 @@ private fun CategoryDropdown(
             )
             categories.forEach { category ->
                 DropdownMenuItem(
-                    text = { Text("${category.iconText()} ${category.name}") },
+                    text = { Text(category.name) },
+                    leadingIcon = {
+                        CategoryIconBadge(
+                            vector = category.iconVector(),
+                            color = category.iconColor(),
+                            size = 32.dp
+                        )
+                    },
                     onClick = {
                         onSelect(category.id)
                         expanded = false
@@ -391,12 +441,49 @@ private fun NewCategoryDialog(
                     supportingText = state.newCategory.errorRes?.let { { Text(stringResource(it)) } }
                 )
                 Text(stringResource(R.string.category_icon), style = MaterialTheme.typography.labelMedium)
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    CategoryIconOptions.keys.chunked(6).forEach { rowKeys ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            rowKeys.forEach { key ->
-                                IconButton(onClick = { onIconSelect(key) }) {
-                                    CategoryIcon(key)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CategoryIconOptions.options.forEach { (key, colorHex) ->
+                        val selected = state.newCategory.iconKey == key
+                        val color = ColorFormatter.parse(colorHex, DefaultCategoryIconColor)
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(
+                                    if (selected) color.copy(alpha = 0.25f)
+                                    else Color.Transparent,
+                                    CircleShape
+                                )
+                                .border(
+                                    width = if (selected) 2.dp else 0.dp,
+                                    color = if (selected) color else Color.Transparent,
+                                    shape = CircleShape
+                                )
+                                .clickable { onIconSelect(key) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = categoryIcon(key),
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            if (selected) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .size(14.dp)
+                                        .background(color, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(10.dp)
+                                    )
                                 }
                             }
                         }
@@ -479,6 +566,13 @@ private fun ExpenseRow(
                 .padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            CategoryIconBadge(
+                vector = categoryIcon(expense.categoryIconKey),
+                color = ColorFormatter.parse(expense.categoryColor, DefaultCategoryIconColor),
+                size = 40.dp,
+                modifier = Modifier.padding(end = 12.dp)
+            )
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = expense.description.ifBlank { stringResource(R.string.expense_no_description) },
@@ -486,7 +580,7 @@ private fun ExpenseRow(
                 )
                 Text(
                     text = listOfNotNull(
-                        expense.categoryLabel,
+                        expense.categoryName,
                         expense.walletName,
                         DateFormatter.formatDate(expense.date)
                     ).joinToString(" · "),
@@ -498,7 +592,8 @@ private fun ExpenseRow(
             Text(
                 text = MoneyFormatter.format(expense.amount),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(end = 4.dp)
             )
 
             IconButton(onClick = onEditClick) {
