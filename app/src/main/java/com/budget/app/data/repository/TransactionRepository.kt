@@ -50,6 +50,10 @@ class TransactionRepository @Inject constructor(
 
     suspend fun deleteTransactionById(id: Long) = transactionDao.deleteTransactionById(id)
 
+    /** Число операций, использующих категорию. */
+    suspend fun countTransactionsByCategory(categoryId: Long): Int =
+        transactionDao.countTransactionsByCategory(categoryId)
+
     suspend fun getTotalIncomeForWallet(walletId: Long): Long =
         transactionDao.getTotalIncomeForWallet(walletId) ?: 0L
 

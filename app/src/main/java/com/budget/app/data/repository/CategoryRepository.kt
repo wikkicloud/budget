@@ -23,4 +23,13 @@ class CategoryRepository @Inject constructor(
         )
     }
 
+    /** Обновляет собственную категорию; null — имя занято другой категорией. */
+    suspend fun updateCategoryIfNameIsAvailable(category: CategoryEntity): CategoryEntity? {
+        if (categoryDao.categoryNameExistsExcluding(category.name, category.id)) return null
+        val updated = category.copy(icon = category.iconKey ?: category.icon)
+        categoryDao.updateCategory(updated)
+        return updated
+    }
+
+    suspend fun deleteCategory(category: CategoryEntity) = categoryDao.deleteCategory(category)
 }

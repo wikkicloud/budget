@@ -72,18 +72,26 @@ data class ExpensesUiState(
     val deleteTarget: ExpenseUi? = null,
     /** true — форма показывает редактирование существующего расхода. */
     val isEditing: Boolean = false,
-    /** Диалог добавления собственной категории. */
+    /** Диалог добавления / редактирования собственной категории. */
     val isCategoryDialogVisible: Boolean = false,
     val newCategory: NewCategoryState = NewCategoryState(),
+    /** Категория, для которой открыт диалог подтверждения удаления. */
+    val deleteCategoryTarget: CategoryEntity? = null,
+    /** Число операций deleteCategoryTarget — подгружается перед показом диалога. */
+    val deleteCategoryUsageCount: Int = 0,
     /** Разовое сообщение для Snackbar. */
     val messageRes: Int? = null
 )
 
 data class NewCategoryState(
+    /** null — создание новой категории, иначе id редактируемой. */
+    val id: Long? = null,
     val name: String = "",
     val iconKey: String = CategoryIconOptions.defaultKey,
     @StringRes val errorRes: Int? = null
-)
+) {
+    val isEditing: Boolean get() = id != null
+}
 
 @HiltViewModel
 class ExpensesViewModel @Inject constructor(
@@ -111,6 +119,11 @@ class ExpensesViewModel @Inject constructor(
             deleteTarget = local.deleteTargetId?.let { id -> mapped.firstOrNull { it.id == id } },
             isEditing = local.form.isEditing,
             isCategoryDialogVisible = local.isCategoryDialogVisible,
+            newCategory = local.newCategory,
+            deleteCategoryTarget = local.deleteCategoryTargetId?.let { id ->
+                categories.firstOrNull { it.id == id }
+            },
+            deleteCategoryUsageCount = local.deleteCategoryUsageCount,
             messageRes = local.messageRes
         )
     }.stateIn(
@@ -137,8 +150,22 @@ class ExpensesViewModel @Inject constructor(
         localState.update { it.copy(isCategoryDialogVisible = true, newCategory = NewCategoryState()) }
     }
 
+    /** Открыть диалог категории в режиме редактирования. */
+    fun onEditCategoryClick(category: CategoryEntity) {
+        localState.update {
+            it.copy(
+                isCategoryDialogVisible = true,
+                newCategory = NewCategoryState(
+                    id = category.id,
+                    name = category.name,
+                    iconKey = category.iconKey ?: CategoryIconOptions.defaultKey
+                )
+            )
+        }
+    }
+
     fun onCategoryDialogDismiss() {
-        localState.update { it.copy(isCategoryDialogVisible = false) }
+        localState.update { it.copy(isCategoryDialogVisible = false, newCategory = NewCategoryState()) }
     }
 
     fun onNewCategoryNameChange(name: String) {
@@ -158,12 +185,21 @@ class ExpensesViewModel @Inject constructor(
         }
         val color = CategoryIconOptions.colorFor(category.iconKey) ?: "#9C7CFF"
         viewModelScope.launch {
-            val id = categoryRepository.addCategoryIfNameIsAvailable(
-                name = name,
-                iconKey = category.iconKey,
-                color = color
-            )
-            if (id == null) {
+            val editingId = category.id
+            val resultId: Long? = if (editingId == null) {
+                categoryRepository.addCategoryIfNameIsAvailable(
+                    name = name,
+                    iconKey = category.iconKey,
+                    color = color
+                )
+            } else {
+                val existing = categoryRepository.getCategoryById(editingId) ?: return@launch
+                val updated = categoryRepository.updateCategoryIfNameIsAvailable(
+                    existing.copy(name = name, iconKey = category.iconKey, color = color)
+                )
+                if (updated == null) null else editingId
+            }
+            if (resultId == null) {
                 localState.update {
                     it.copy(newCategory = category.copy(errorRes = R.string.category_error_duplicate))
                 }
@@ -172,9 +208,45 @@ class ExpensesViewModel @Inject constructor(
                     it.copy(
                         isCategoryDialogVisible = false,
                         newCategory = NewCategoryState(),
-                        form = it.form.copy(categoryId = id)
+                        form = it.form.copy(categoryId = resultId)
                     )
                 }
+            }
+        }
+    }
+
+    // --- Удаление собственной категории ---
+
+    /** Открыть диалог подтверждения удаления; заодно подгрузить число операций категории. */
+    fun onDeleteCategoryClick(category: CategoryEntity) {
+        viewModelScope.launch {
+            val count = transactionRepository.countTransactionsByCategory(category.id)
+            localState.update {
+                it.copy(deleteCategoryTargetId = category.id, deleteCategoryUsageCount = count)
+            }
+        }
+    }
+
+    fun onDeleteCategoryDismiss() {
+        localState.update { it.copy(deleteCategoryTargetId = null, deleteCategoryUsageCount = 0) }
+    }
+
+    fun onDeleteCategoryConfirm() {
+        val target = uiState.value.deleteCategoryTarget ?: return
+        viewModelScope.launch {
+            categoryRepository.deleteCategory(target)
+            localState.update {
+                it.copy(
+                    deleteCategoryTargetId = null,
+                    deleteCategoryUsageCount = 0,
+                    // Категория удалена — в форме она больше не выбрана.
+                    form = if (it.form.categoryId == target.id) {
+                        it.form.copy(categoryId = null)
+                    } else {
+                        it.form
+                    },
+                    messageRes = R.string.category_deleted
+                )
             }
         }
     }
@@ -287,5 +359,7 @@ private data class ExpensesLocalState(
     val deleteTargetId: Long? = null,
     val isCategoryDialogVisible: Boolean = false,
     val newCategory: NewCategoryState = NewCategoryState(),
+    val deleteCategoryTargetId: Long? = null,
+    val deleteCategoryUsageCount: Int = 0,
     @StringRes val messageRes: Int? = null
 )

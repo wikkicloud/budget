@@ -83,6 +83,10 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteTransactionById(id: Long)
 
+    /** Сколько операций (расходов и доходов) используют категорию — для подтверждения удаления. */
+    @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId")
+    suspend fun countTransactionsByCategory(categoryId: Long): Int
+
     @Query("SELECT SUM(amount) FROM transactions WHERE walletId = :walletId AND type = 'INCOME'")
     suspend fun getTotalIncomeForWallet(walletId: Long): Long?
 

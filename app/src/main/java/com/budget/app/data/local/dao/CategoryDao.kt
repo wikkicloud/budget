@@ -1,8 +1,10 @@
 package com.budget.app.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.budget.app.data.local.entity.CategoryEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -20,6 +22,22 @@ interface CategoryDao {
     @Insert
     suspend fun insertCategory(category: CategoryEntity): Long
 
+    @Update
+    suspend fun updateCategory(category: CategoryEntity)
+
+    @Delete
+    suspend fun deleteCategory(category: CategoryEntity)
+
     @Query("SELECT EXISTS(SELECT 1 FROM categories WHERE LOWER(name) = LOWER(:name))")
     suspend fun categoryNameExists(name: String): Boolean
+
+    @Query(
+        """
+        SELECT EXISTS(
+            SELECT 1 FROM categories
+            WHERE LOWER(name) = LOWER(:name) AND id != :excludeId
+        )
+        """
+    )
+    suspend fun categoryNameExistsExcluding(name: String, excludeId: Long): Boolean
 }

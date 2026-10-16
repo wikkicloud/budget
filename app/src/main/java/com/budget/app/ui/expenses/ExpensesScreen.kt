@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -142,6 +144,8 @@ fun ExpensesScreen(
                         onDescriptionChange = viewModel::onDescriptionChange,
                         onCategorySelect = viewModel::onCategorySelect,
                         onAddCategoryClick = viewModel::onAddCategoryClick,
+                        onEditCategoryClick = viewModel::onEditCategoryClick,
+                        onDeleteCategoryClick = viewModel::onDeleteCategoryClick,
                         onWalletSelect = viewModel::onWalletSelect,
                         onSave = viewModel::onSave,
                         onCancelEdit = viewModel::onCancelEdit
@@ -199,6 +203,15 @@ fun ExpensesScreen(
             onDismiss = viewModel::onCategoryDialogDismiss
         )
     }
+
+    state.deleteCategoryTarget?.let { category ->
+        DeleteCategoryDialog(
+            category = category,
+            usageCount = state.deleteCategoryUsageCount,
+            onConfirm = viewModel::onDeleteCategoryConfirm,
+            onDismiss = viewModel::onDeleteCategoryDismiss
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -209,6 +222,8 @@ private fun ExpenseFormCard(
     onDescriptionChange: (String) -> Unit,
     onCategorySelect: (Long?) -> Unit,
     onAddCategoryClick: () -> Unit,
+    onEditCategoryClick: (CategoryEntity) -> Unit,
+    onDeleteCategoryClick: (CategoryEntity) -> Unit,
     onWalletSelect: (Long?) -> Unit,
     onSave: () -> Unit,
     onCancelEdit: () -> Unit
@@ -253,7 +268,9 @@ private fun ExpenseFormCard(
                 selectedId = form.categoryId,
                 categories = state.categories,
                 onSelect = onCategorySelect,
-                onAddCategoryClick = onAddCategoryClick
+                onAddCategoryClick = onAddCategoryClick,
+                onEditCategoryClick = onEditCategoryClick,
+                onDeleteCategoryClick = onDeleteCategoryClick
             )
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -285,13 +302,18 @@ private fun ExpenseFormCard(
     }
 }
 
+/** Собственная ли категория (добавленная пользователем), а не предзаполненная. */
+private fun CategoryEntity.isCustom(): Boolean = iconKey != null
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CategoryDropdown(
     selectedId: Long?,
     categories: List<CategoryEntity>,
     onSelect: (Long?) -> Unit,
-    onAddCategoryClick: () -> Unit
+    onAddCategoryClick: () -> Unit,
+    onEditCategoryClick: (CategoryEntity) -> Unit,
+    onDeleteCategoryClick: (CategoryEntity) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = categories.firstOrNull { it.id == selectedId }
@@ -331,18 +353,19 @@ private fun CategoryDropdown(
                 }
             )
             categories.forEach { category ->
-                DropdownMenuItem(
-                    text = { Text(category.name) },
-                    leadingIcon = {
-                        CategoryIconBadge(
-                            vector = category.iconVector(),
-                            color = category.iconColor(),
-                            size = 32.dp
-                        )
-                    },
-                    onClick = {
+                CategoryDropdownItem(
+                    category = category,
+                    onSelect = {
                         onSelect(category.id)
                         expanded = false
+                    },
+                    onEdit = {
+                        expanded = false
+                        onEditCategoryClick(category)
+                    },
+                    onDelete = {
+                        expanded = false
+                        onDeleteCategoryClick(category)
                     }
                 )
             }
@@ -358,6 +381,75 @@ private fun CategoryDropdown(
     }
 }
 
+/** Строка категории в выпадающем списке; у собственных категорий — меню «Редактировать/Удалить». */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoryDropdownItem(
+    category: CategoryEntity,
+    onSelect: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val isCustom = category.isCustom()
+    if (!isCustom) {
+        DropdownMenuItem(
+            text = { Text(category.name) },
+            leadingIcon = {
+                CategoryIconBadge(
+                    vector = category.iconVector(),
+                    color = category.iconColor(),
+                    size = 32.dp
+                )
+            },
+            onClick = onSelect
+        )
+        return
+    }
+
+    var menuExpanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = menuExpanded,
+        onExpandedChange = { menuExpanded = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        DropdownMenuItem(
+            text = { Text(category.name) },
+            leadingIcon = {
+                CategoryIconBadge(
+                    vector = category.iconVector(),
+                    color = category.iconColor(),
+                    size = 32.dp
+                )
+            },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = stringResource(R.string.category_manage),
+                    modifier = Modifier
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                        .widthIn(min = 24.dp)
+                )
+            },
+            onClick = onSelect
+        )
+        ExposedDropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_edit)) },
+                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                onClick = onEdit
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_delete)) },
+                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
+                onClick = onDelete
+            )
+        }
+    }
+}
+
 @Composable
 private fun NewCategoryDialog(
     state: ExpensesUiState,
@@ -366,12 +458,19 @@ private fun NewCategoryDialog(
     onSave: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var categoryName by remember(state.isCategoryDialogVisible) {
-        mutableStateOf("")
+    val editing = state.newCategory.isEditing
+    var categoryName by remember(state.newCategory.id) {
+        mutableStateOf(state.newCategory.name)
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.category_new_title)) },
+        title = {
+            Text(
+                stringResource(
+                    if (editing) R.string.category_edit_title else R.string.category_new_title
+                )
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -438,6 +537,39 @@ private fun NewCategoryDialog(
         },
         confirmButton = { TextButton(onClick = onSave) { Text(stringResource(R.string.action_save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+    )
+}
+
+/** Подтверждение удаления собственной категории. */
+@Composable
+private fun DeleteCategoryDialog(
+    category: CategoryEntity,
+    usageCount: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.category_delete_title)) },
+        text = {
+            Text(
+                if (usageCount > 0) {
+                    stringResource(R.string.category_delete_message_used, category.name, usageCount)
+                } else {
+                    stringResource(R.string.category_delete_message_unused, category.name)
+                }
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.action_delete))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        }
     )
 }
 
