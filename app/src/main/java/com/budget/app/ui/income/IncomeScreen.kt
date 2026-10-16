@@ -67,52 +67,61 @@ fun IncomeScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item {
-                IncomeFormCard(
-                    state = state,
-                    onAmountChange = viewModel::onAmountChange,
-                    onDescriptionChange = viewModel::onDescriptionChange,
-                    onWalletSelect = viewModel::onWalletSelect,
-                    onSave = viewModel::onSave
-                )
-            }
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            text = stringResource(R.string.screen_income),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        )
 
-            item {
-                Text(
-                    text = stringResource(R.string.incomes_recent),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    IncomeFormCard(
+                        state = state,
+                        onAmountChange = viewModel::onAmountChange,
+                        onDescriptionChange = viewModel::onDescriptionChange,
+                        onWalletSelect = viewModel::onWalletSelect,
+                        onSave = viewModel::onSave
+                    )
+                }
 
-            if (state.incomes.isEmpty() && !state.isLoading) {
                 item {
                     Text(
-                        text = stringResource(R.string.incomes_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.incomes_recent),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
-            } else {
-                items(state.incomes, key = { it.id }) { income ->
-                    IncomeRow(
-                        income = income,
-                        onDeleteClick = { viewModel.onDeleteClick(income) }
-                    )
+
+                if (state.incomes.isEmpty() && !state.isLoading) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.incomes_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    items(state.incomes, key = { it.id }) { income ->
+                        IncomeRow(
+                            income = income,
+                            onDeleteClick = { viewModel.onDeleteClick(income) }
+                        )
+                    }
                 }
             }
-        }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
 
     state.deleteTarget?.let { income ->

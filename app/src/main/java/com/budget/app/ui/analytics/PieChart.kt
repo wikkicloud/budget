@@ -10,23 +10,28 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.budget.app.R
 import com.budget.app.ui.theme.AnalyticsColors
 import com.budget.app.ui.theme.analyticsColors
+import com.budget.app.util.categoryIconVectorOrNull
 import com.budget.app.util.ColorFormatter
 import com.budget.app.util.MoneyFormatter
 import androidx.compose.ui.text.style.TextAlign
@@ -108,6 +113,7 @@ fun CategoryPieChart(
         slices.forEachIndexed { index, slice ->
             LegendRow(
                 color = colors[index],
+                iconKey = slice.icon,
                 label = slice.label(),
                 amount = MoneyFormatter.format(slice.amount),
                 fraction = slice.fraction
@@ -116,10 +122,11 @@ fun CategoryPieChart(
     }
 }
 
-/** Строка легенды: цвет, подпись, сумма и доля. */
+/** Строка легенды: значок категории (или цветная точка), подпись, сумма и доля. */
 @Composable
 private fun LegendRow(
     color: Color,
+    iconKey: String?,
     label: String,
     amount: String,
     fraction: Float
@@ -130,11 +137,29 @@ private fun LegendRow(
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Surface(
-            modifier = Modifier.size(12.dp),
-            shape = CircleShape,
-            color = color
-        ) {}
+        val vector: ImageVector? = categoryIconVectorOrNull(iconKey)
+        if (vector != null) {
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .background(color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = vector,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(13.dp)
+                )
+            }
+        } else {
+            Surface(
+                modifier = Modifier.size(12.dp),
+                shape = CircleShape,
+                color = color
+            ) {}
+        }
 
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -160,9 +185,4 @@ internal fun percent(fraction: Float): String {
 
 /** Имя категории для легенды; для операций без категории — строка из ресурсов. */
 @Composable
-private fun CategorySlice.label(): String =
-    if (name == null) {
-        stringResource(R.string.analytics_no_category)
-    } else {
-        listOfNotNull(icon, name).joinToString(" ")
-    }
+private fun CategorySlice.label(): String = name ?: stringResource(R.string.analytics_no_category)

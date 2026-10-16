@@ -22,38 +22,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Cake
-import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChildFriendly
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.Flight
-import androidx.compose.material.icons.filled.HealthAndSafety
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocalCafe
-import androidx.compose.material.icons.filled.LocalGasStation
-import androidx.compose.material.icons.filled.LocalHospital
-import androidx.compose.material.icons.filled.LocalGroceryStore
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.SportsEsports
-import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -94,6 +65,8 @@ import com.budget.app.R
 import com.budget.app.data.local.entity.CategoryEntity
 import com.budget.app.data.local.entity.WalletEntity
 import com.budget.app.domain.model.WalletType
+import com.budget.app.util.CategoryIconOptions
+import com.budget.app.util.categoryIconVector
 import com.budget.app.util.ColorFormatter
 import com.budget.app.util.DateFormatter
 import com.budget.app.util.MoneyFormatter
@@ -101,44 +74,7 @@ import com.budget.app.util.MoneyFormatter
 /** Цвет иконки по умолчанию, если у категории цвет не задан или не разобран. */
 private val DefaultCategoryIconColor = Color(0xFF9C7CFF)
 
-/**
- * Иконка категории как вектор Material Icons.
- * Для встроенных категорий [iconKey] null — ключ берётся из legacy-эмодзи.
- */
-private fun categoryIcon(key: String?) = when (key.orEmpty()) {
-    "restaurant", "🍽️" -> Icons.Filled.Restaurant
-    "local_cafe", "☕" -> Icons.Filled.LocalCafe
-    "shopping_cart", "🛍️" -> Icons.Filled.ShoppingCart
-    "directions_car", "🚗" -> Icons.Filled.DirectionsCar
-    "home", "🏠" -> Icons.Filled.Home
-    "favorite" -> Icons.Filled.Favorite
-    "health_and_safety", "💊" -> Icons.Filled.HealthAndSafety
-    "sports_esports", "🎮" -> Icons.Filled.SportsEsports
-    "movie" -> Icons.Filled.Movie
-    "flight" -> Icons.Filled.Flight
-    "school" -> Icons.Filled.School
-    "work" -> Icons.Filled.Work
-    "pets" -> Icons.Filled.Pets
-    "local_gas_station" -> Icons.Filled.LocalGasStation
-    "build" -> Icons.Filled.Build
-    "phone" -> Icons.Filled.Phone
-    "wifi" -> Icons.Filled.Wifi
-    "fitness_center" -> Icons.Filled.FitnessCenter
-    "local_hospital" -> Icons.Filled.LocalHospital
-    "local_grocery_store", "🛒" -> Icons.Filled.LocalGroceryStore
-    "child_friendly" -> Icons.Filled.ChildFriendly
-    "music_note" -> Icons.Filled.MusicNote
-    "book" -> Icons.Filled.MenuBook
-    "camera_alt" -> Icons.Filled.CameraAlt
-    "cake" -> Icons.Filled.Cake
-    "celebration" -> Icons.Filled.Celebration
-    "payments" -> Icons.Filled.Payments
-    "savings" -> Icons.Filled.Savings
-    "more_horiz", "📌" -> Icons.Filled.MoreHoriz
-    else -> Icons.Filled.MoreHoriz
-}
-
-private fun CategoryEntity.iconVector() = categoryIcon(iconKey ?: icon)
+private fun CategoryEntity.iconVector(): ImageVector = categoryIconVector(iconKey ?: icon)
 
 /** Цвет иконки категории: цвет по умолчанию для ключа, иначе сохранённый color. */
 private fun CategoryEntity.iconColor(): Color {
@@ -185,56 +121,65 @@ fun ExpensesScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item {
-                ExpenseFormCard(
-                    state = state,
-                    onAmountChange = viewModel::onAmountChange,
-                    onDescriptionChange = viewModel::onDescriptionChange,
-                    onCategorySelect = viewModel::onCategorySelect,
-                    onAddCategoryClick = viewModel::onAddCategoryClick,
-                    onWalletSelect = viewModel::onWalletSelect,
-                    onSave = viewModel::onSave,
-                    onCancelEdit = viewModel::onCancelEdit
-                )
-            }
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            text = stringResource(R.string.screen_expenses),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        )
 
-            item {
-                Text(
-                    text = stringResource(R.string.expenses_recent),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    ExpenseFormCard(
+                        state = state,
+                        onAmountChange = viewModel::onAmountChange,
+                        onDescriptionChange = viewModel::onDescriptionChange,
+                        onCategorySelect = viewModel::onCategorySelect,
+                        onAddCategoryClick = viewModel::onAddCategoryClick,
+                        onWalletSelect = viewModel::onWalletSelect,
+                        onSave = viewModel::onSave,
+                        onCancelEdit = viewModel::onCancelEdit
+                    )
+                }
 
-            if (state.expenses.isEmpty() && !state.isLoading) {
                 item {
                     Text(
-                        text = stringResource(R.string.expenses_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.expenses_recent),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
-            } else {
-                items(state.expenses, key = { it.id }) { expense ->
-                    ExpenseRow(
-                        expense = expense,
-                        onEditClick = { viewModel.onEditClick(expense) },
-                        onDeleteClick = { viewModel.onDeleteClick(expense) }
-                    )
+
+                if (state.expenses.isEmpty() && !state.isLoading) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.expenses_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    items(state.expenses, key = { it.id }) { expense ->
+                        ExpenseRow(
+                            expense = expense,
+                            onEditClick = { viewModel.onEditClick(expense) },
+                            onDeleteClick = { viewModel.onDeleteClick(expense) }
+                        )
+                    }
                 }
             }
-        }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
 
     state.deleteTarget?.let { expense ->
@@ -465,7 +410,7 @@ private fun NewCategoryDialog(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = categoryIcon(key),
+                                imageVector = categoryIconVector(key),
                                 contentDescription = null,
                                 tint = color,
                                 modifier = Modifier.size(24.dp)
@@ -567,7 +512,7 @@ private fun ExpenseRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             CategoryIconBadge(
-                vector = categoryIcon(expense.categoryIconKey),
+                vector = categoryIconVector(expense.categoryIconKey),
                 color = ColorFormatter.parse(expense.categoryColor, DefaultCategoryIconColor),
                 size = 40.dp,
                 modifier = Modifier.padding(end = 12.dp)

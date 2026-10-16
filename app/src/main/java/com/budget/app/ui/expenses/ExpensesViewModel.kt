@@ -12,6 +12,7 @@ import com.budget.app.data.repository.CategoryRepository
 import com.budget.app.data.repository.TransactionRepository
 import com.budget.app.data.repository.WalletRepository
 import com.budget.app.domain.model.TransactionType
+import com.budget.app.util.CategoryIconOptions
 import com.budget.app.util.MoneyFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,49 +84,6 @@ data class NewCategoryState(
     val iconKey: String = CategoryIconOptions.defaultKey,
     @StringRes val errorRes: Int? = null
 )
-
-object CategoryIconOptions {
-    const val defaultKey = "restaurant"
-
-    /** Ключ иконки и цвет по умолчанию для неё. */
-    val options: List<Pair<String, String>> = listOf(
-        "restaurant" to "#FF9800",
-        "local_cafe" to "#795548",
-        "shopping_cart" to "#4CAF50",
-        "directions_car" to "#2196F3",
-        "home" to "#9C27B0",
-        "favorite" to "#F44336",
-        "health_and_safety" to "#F44336",
-        "sports_esports" to "#E91E63",
-        "movie" to "#673AB7",
-        "flight" to "#03A9F4",
-        "school" to "#3F51B5",
-        "work" to "#607D8B",
-        "pets" to "#FF5722",
-        "local_gas_station" to "#607D8B",
-        "build" to "#FF9800",
-        "phone" to "#00BCD4",
-        "wifi" to "#03A9F4",
-        "fitness_center" to "#4CAF50",
-        "local_hospital" to "#F44336",
-        "local_grocery_store" to "#4CAF50",
-        "child_friendly" to "#E91E63",
-        "music_note" to "#9C27B0",
-        "book" to "#3F51B5",
-        "camera_alt" to "#607D8B",
-        "cake" to "#EC407A",
-        "celebration" to "#AB47BC",
-        "payments" to "#66BB6A",
-        "savings" to "#26A69A",
-        "more_horiz" to "#9E9E9E"
-    )
-
-    val keys: List<String> get() = options.map { it.first }
-
-    /** Цвет по умолчанию для ключа иконки; null — если ключ неизвестен. */
-    fun colorFor(key: String?): String? =
-        key?.let { k -> options.firstOrNull { it.first == k }?.second }
-}
 
 @HiltViewModel
 class ExpensesViewModel @Inject constructor(

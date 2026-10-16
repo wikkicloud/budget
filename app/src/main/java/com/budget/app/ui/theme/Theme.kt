@@ -12,21 +12,44 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = LavenderPrimaryDark,
+    onPrimary = LavenderOnPrimaryDark,
+    primaryContainer = LavenderPrimaryContainerDark,
+    onPrimaryContainer = LavenderOnPrimaryContainerDark,
+    secondary = LavenderSecondaryDark,
+    tertiary = LavenderTertiaryDark,
+    error = LavenderErrorDark,
+    background = LavenderBackgroundDark,
+    onBackground = LavenderOnBackgroundDark,
+    surface = LavenderSurfaceDark,
+    onSurface = LavenderOnBackgroundDark,
+    surfaceVariant = LavenderSurfaceVariantDark,
+    onSurfaceVariant = LavenderOnSurfaceVariantDark,
+    outline = LavenderOutlineDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = LavenderPrimary,
+    onPrimary = LavenderOnPrimary,
+    primaryContainer = LavenderPrimaryContainer,
+    onPrimaryContainer = LavenderOnPrimaryContainer,
+    secondary = LavenderSecondary,
+    tertiary = LavenderTertiary,
+    error = LavenderError,
+    background = LavenderBackground,
+    onBackground = LavenderOnBackground,
+    surface = LavenderSurface,
+    onSurface = LavenderOnBackground,
+    surfaceVariant = LavenderSurfaceVariant,
+    onSurfaceVariant = LavenderOnSurfaceVariant,
+    outline = LavenderOutline
 )
 
 @Composable
 fun BudgetTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    // Динамические цвета Material You отключены: приложение целиком в лавандовой гамме.
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

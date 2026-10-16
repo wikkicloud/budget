@@ -72,11 +72,7 @@ fun AnalyticsScreen(
 
     val analytics = analyticsColors()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(analytics.surface)
-    ) {
+    Column(modifier = Modifier.fillMaxSize()) {
         Text(
             text = stringResource(R.string.screen_analytics),
             style = MaterialTheme.typography.headlineSmall,
