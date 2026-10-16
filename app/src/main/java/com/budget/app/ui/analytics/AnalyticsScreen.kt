@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.budget.app.R
 import com.budget.app.domain.analytics.AnalyticsBucket
 import com.budget.app.domain.analytics.AnalyticsPeriod
+import com.budget.app.ui.theme.analyticsColors
 import com.budget.app.util.MoneyFormatter
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -57,7 +58,20 @@ fun AnalyticsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showCustomDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    val analytics = analyticsColors()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(analytics.surface)
+    ) {
+        Text(
+            text = stringResource(R.string.screen_analytics),
+            style = MaterialTheme.typography.headlineSmall,
+            color = analytics.accent,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        )
+
         PeriodSwitcher(
             selected = state.selection.period,
             onSelect = { period ->
@@ -79,7 +93,7 @@ fun AnalyticsScreen(
                 state.range.toDate.toDisplayDate()
             ),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = analytics.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
@@ -161,21 +175,30 @@ private fun PeriodSwitcher(
 ) {
     val periods = AnalyticsPeriod.entries
 
+    val analytics = analyticsColors()
+
     Column(modifier = modifier) {
         Text(
             text = stringResource(R.string.analytics_period),
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = analytics.accent
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             periods.forEachIndexed { index, period ->
+                val selected = selected == period
                 SegmentedButton(
-                    selected = selected == period,
+                    selected = selected,
                     onClick = { onSelect(period) },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = periods.size)
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = periods.size),
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = analytics.accentContainer,
+                        activeContentColor = analytics.onAccentContainer,
+                        activeBorderColor = analytics.accent,
+                        inactiveBorderColor = analytics.surfaceVariant
+                    )
                 ) {
                     Text(
                         text = stringResource(period.labelRes),
@@ -196,13 +219,17 @@ private fun SummaryCard(
     difference: Long,
     modifier: Modifier = Modifier
 ) {
+    val analytics = analyticsColors()
     val differenceColor = when {
-        difference > 0 -> MaterialTheme.colorScheme.primary
+        difference > 0 -> analytics.accent
         difference < 0 -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurface
     }
 
-    Card(modifier = modifier.fillMaxWidth()) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = analytics.surfaceVariant)
+    ) {
         Column(
             modifier = Modifier.padding(vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -261,7 +288,11 @@ private fun SectionCard(
     subtitle: String? = null,
     content: @Composable () -> Unit
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
+    val analytics = analyticsColors()
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = analytics.surfaceVariant)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = title, style = MaterialTheme.typography.titleMedium)
 
@@ -285,6 +316,10 @@ private fun SectionCard(
 private fun WalletRow(slice: WalletSlice, total: Long) {
     val fraction = if (total > 0) slice.amount.toFloat() / total else 0f
 
+    val analytics = analyticsColors()
+    val trackColor = analytics.surface
+    val progressColor = analytics.accent
+
     Column(modifier = Modifier.padding(vertical = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -306,14 +341,14 @@ private fun WalletRow(slice: WalletSlice, total: Long) {
                 .fillMaxWidth()
                 .height(6.dp)
                 .clip(RoundedCornerShape(3.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(trackColor)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fraction)
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp))
-                    .background(MaterialTheme.colorScheme.tertiary)
+                    .background(progressColor)
             )
         }
     }

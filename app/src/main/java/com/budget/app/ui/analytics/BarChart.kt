@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.budget.app.R
 import com.budget.app.domain.analytics.AnalyticsBucket
+import com.budget.app.ui.theme.analyticsColors
 
 /** Диаграмма «доходы vs расходы»: пара столбцов на каждый интервал периода. */
 @Composable
@@ -42,9 +43,10 @@ fun IncomeExpenseBarChart(
 ) {
     if (points.isEmpty()) return
 
-    val incomeColor = MaterialTheme.colorScheme.primary
-    val expenseColor = MaterialTheme.colorScheme.tertiary
-    val axisColor = MaterialTheme.colorScheme.outlineVariant
+    val analytics = analyticsColors()
+    val incomeColor = analytics.income
+    val expenseColor = analytics.expense
+    val axisColor = analytics.surfaceVariant
 
     val maxValue = points.maxOf { maxOf(it.income, it.expense) }.coerceAtLeast(1L)
 

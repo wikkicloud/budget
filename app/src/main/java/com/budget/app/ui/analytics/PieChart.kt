@@ -25,25 +25,28 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.budget.app.R
+import com.budget.app.ui.theme.AnalyticsColors
+import com.budget.app.ui.theme.analyticsColors
 import com.budget.app.util.ColorFormatter
 import com.budget.app.util.MoneyFormatter
 import androidx.compose.ui.text.style.TextAlign
 
-/** Палитра для долей, у которых нет своего цвета категории. */
-private val FALLBACK_COLORS = listOf(
-    Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFF9C27B0), Color(0xFFFF9800),
-    Color(0xFFF44336), Color(0xFFE91E63), Color(0xFF00BCD4), Color(0xFF9E9E9E)
+/** Запасная палитра в лавандовой гамме — для долей без своего цвета категории. */
+private fun AnalyticsColors.fallbackPalette(): List<Color> = listOf(
+    accent, income, expense,
+    Color(0xFF9B7FBC), Color(0xFFC58FB1), Color(0xFFB39DDB), Color(0xFFCE93D8), Color(0xFF8D6E9E)
 )
 
-/** Кольцевая диаграмма расходов по категориям с легендой и суммами. */
 @Composable
 fun CategoryPieChart(
     slices: List<CategorySlice>,
     modifier: Modifier = Modifier
 ) {
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val analytics = analyticsColors()
+    val trackColor = analytics.surface
+    val palette = analytics.fallbackPalette()
     val colors = slices.mapIndexed { index, slice ->
-        ColorFormatter.parse(slice.colorHex, FALLBACK_COLORS[index % FALLBACK_COLORS.size])
+        ColorFormatter.parse(slice.colorHex, palette[index % palette.size])
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
