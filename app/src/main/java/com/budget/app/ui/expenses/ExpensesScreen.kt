@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -381,8 +380,7 @@ private fun CategoryDropdown(
     }
 }
 
-/** Строка категории в выпадающем списке; у собственных категорий — меню «Редактировать/Удалить». */
-@OptIn(ExperimentalMaterial3Api::class)
+/** Строка категории в выпадающем списке; у собственных категорий — кнопка меню «Редактировать/Удалить». */
 @Composable
 private fun CategoryDropdownItem(
     category: CategoryEntity,
@@ -390,61 +388,71 @@ private fun CategoryDropdownItem(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val isCustom = category.isCustom()
-    if (!isCustom) {
+    val badge: @Composable () -> Unit = {
+        CategoryIconBadge(
+            vector = category.iconVector(),
+            color = category.iconColor(),
+            size = 32.dp
+        )
+    }
+
+    if (!category.isCustom()) {
         DropdownMenuItem(
             text = { Text(category.name) },
-            leadingIcon = {
-                CategoryIconBadge(
-                    vector = category.iconVector(),
-                    color = category.iconColor(),
-                    size = 32.dp
-                )
-            },
+            leadingIcon = badge,
             onClick = onSelect
         )
         return
     }
 
     var menuExpanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = menuExpanded,
-        onExpandedChange = { menuExpanded = it },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        DropdownMenuItem(
-            text = { Text(category.name) },
-            leadingIcon = {
-                CategoryIconBadge(
-                    vector = category.iconVector(),
-                    color = category.iconColor(),
-                    size = 32.dp
-                )
-            },
-            trailingIcon = {
+    Box(modifier = Modifier.fillMaxWidth()) {
+        // Собственная категория: выбор — отдельная зона, меню — отдельная кнопка.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onSelect)
+                .padding(start = 12.dp, top = 8.dp, end = 4.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            badge()
+            Text(
+                text = category.name,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp)
+            )
+            IconButton(onClick = { menuExpanded = true }) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
-                    contentDescription = stringResource(R.string.category_manage),
-                    modifier = Modifier
-                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                        .widthIn(min = 24.dp)
+                    contentDescription = stringResource(R.string.category_manage)
                 )
-            },
-            onClick = onSelect
-        )
-        ExposedDropdownMenu(
+            }
+        }
+
+        // Меню привязано к кнопке, а не к целой строке, иначе «три точки» открывали бы его
+        // в стороне и тап по иконке «проглатывался» бы кликом по строке.
+        DropdownMenu(
             expanded = menuExpanded,
-            onDismissRequest = { menuExpanded = false }
+            onDismissRequest = { menuExpanded = false },
+            modifier = Modifier.align(Alignment.CenterEnd)
         ) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.action_edit)) },
                 leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                onClick = onEdit
+                onClick = {
+                    menuExpanded = false
+                    onEdit()
+                }
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.action_delete)) },
                 leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                onClick = onDelete
+                onClick = {
+                    menuExpanded = false
+                    onDelete()
+                }
             )
         }
     }
