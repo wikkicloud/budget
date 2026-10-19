@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Бюджет</string>
+    <string name="app_name">Ларец</string>
 
     <!-- Экраны -->
     <string name="screen_expenses">Расход</string>
