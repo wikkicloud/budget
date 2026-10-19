@@ -6,7 +6,6 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.budget.app.R
 import com.budget.app.data.local.BudgetDatabase
-import com.budget.app.data.local.DbMigrations
 import com.budget.app.data.local.dao.CategoryDao
 import com.budget.app.data.local.dao.SavingsDao
 import com.budget.app.data.local.dao.TransactionDao
@@ -42,7 +41,9 @@ object DatabaseModule {
             BudgetDatabase::class.java,
             "budget_database"
         )
-            .addMigrations(*DbMigrations.ALL)
+            // До первого релиза миграции не пишем: схема меняется напрямую, старая база
+            // пересоздаётся, тестовые данные стираются. Перед релизом — заменить на миграции.
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
