@@ -13,7 +13,8 @@ import kotlinx.coroutines.flow.Flow
 interface WalletDao {
     /**
      * Кошельки вместе с балансом: начальная сумма + доходы − расходы,
-     * а также − исходящие и + входящие переводы.
+     * − исходящие и + входящие переводы, − пополнения копилок и + возвраты из них.
+     * Проценты по копилкам кошельков не касаются (у них `walletId` = NULL).
      */
     @Query(
         """
@@ -27,6 +28,10 @@ interface WalletDao {
                     WHERE tr.fromWalletId = w.id), 0)
                 + COALESCE((SELECT SUM(tr.amount) FROM transfers tr
                     WHERE tr.toWalletId = w.id), 0)
+                - COALESCE((SELECT SUM(so.amount) FROM savings_operations so
+                    WHERE so.walletId = w.id AND so.type = 'DEPOSIT'), 0)
+                + COALESCE((SELECT SUM(so.amount) FROM savings_operations so
+                    WHERE so.walletId = w.id AND so.type = 'WITHDRAW'), 0)
                 AS balance
         FROM wallets w
         ORDER BY w.id ASC
@@ -50,8 +55,9 @@ interface WalletDao {
     suspend fun deleteWallet(wallet: WalletEntity)
 
     /**
-     * Удаляет кошелёк, только если он не используется ни в операциях, ни в переводах
-     * (переводы ссылаются на кошельки внешними ключами с CASCADE — молча терять их нельзя).
+     * Удаляет кошелёк, только если он не используется ни в операциях, ни в переводах,
+     * ни в операциях по копилкам (у переводов внешний ключ с CASCADE, а у операций
+     * по копилкам — SET_NULL: без проверки история молча потерялась бы или обнулилась).
      */
     @Query(
         """
@@ -59,6 +65,9 @@ interface WalletDao {
             AND NOT EXISTS (SELECT 1 FROM transactions WHERE walletId = :id)
             AND NOT EXISTS (
                 SELECT 1 FROM transfers WHERE fromWalletId = :id OR toWalletId = :id
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM savings_operations WHERE walletId = :id
             )
         """
     )

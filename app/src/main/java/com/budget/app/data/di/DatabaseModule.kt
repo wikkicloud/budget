@@ -8,6 +8,7 @@ import com.budget.app.R
 import com.budget.app.data.local.BudgetDatabase
 import com.budget.app.data.local.DbMigrations
 import com.budget.app.data.local.dao.CategoryDao
+import com.budget.app.data.local.dao.SavingsDao
 import com.budget.app.data.local.dao.TransactionDao
 import com.budget.app.data.local.dao.TransferDao
 import com.budget.app.data.local.dao.WalletDao
@@ -139,5 +140,11 @@ object DatabaseModule {
     @Singleton
     fun provideTransferDao(database: BudgetDatabase): TransferDao {
         return database.transferDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSavingsDao(database: BudgetDatabase): SavingsDao {
+        return database.savingsDao()
     }
 }

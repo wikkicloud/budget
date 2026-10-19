@@ -43,6 +43,46 @@ object DbMigrations {
         }
     }
 
+    /** 3 → 4: таблицы копилок и операций по ним. Существующие данные не меняются. */
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `savings` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `name` TEXT NOT NULL,
+                    `createdAt` INTEGER NOT NULL,
+                    `targetAmount` INTEGER
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `savings_operations` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `savingsId` INTEGER NOT NULL,
+                    `walletId` INTEGER,
+                    `amount` INTEGER NOT NULL,
+                    `type` TEXT NOT NULL,
+                    `date` INTEGER NOT NULL,
+                    FOREIGN KEY(`savingsId`) REFERENCES `savings`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE,
+                    FOREIGN KEY(`walletId`) REFERENCES `wallets`(`id`)
+                        ON UPDATE NO ACTION ON DELETE SET NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_savings_operations_savingsId` " +
+                    "ON `savings_operations` (`savingsId`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_savings_operations_walletId` " +
+                    "ON `savings_operations` (`walletId`)"
+            )
+        }
+    }
+
     /** Все миграции по порядку — их подключает [com.budget.app.data.di.DatabaseModule]. */
-    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }
