@@ -35,6 +35,27 @@
     <string name="wallets_empty">Кошельков пока нет</string>
     <string name="wallets_empty_hint">Нажмите «+», чтобы добавить первый кошелёк</string>
 
+    <!-- Переводы между кошельками -->
+    <string name="transfer_button">Перевести</string>
+    <string name="transfer_title">Перевод между кошельками</string>
+    <string name="transfer_from">Откуда</string>
+    <string name="transfer_to">Куда</string>
+    <string name="transfer_amount">Сумма</string>
+    <string name="transfer_note">Комментарий</string>
+    <string name="transfer_note_optional">Необязательно</string>
+    <string name="transfer_save">Перевести</string>
+    <string name="transfer_none">Не выбран</string>
+    <string name="transfer_error_wallets">Выберите два разных кошелька</string>
+    <string name="transfer_error_amount">Введите сумму больше нуля</string>
+    <string name="transfer_error_not_enough">Недостаточно средств на кошельке-источнике</string>
+    <string name="transfer_saved">Перевод сохранён</string>
+    <string name="transfers_recent">Последние переводы</string>
+    <string name="transfers_empty">Переводов пока нет</string>
+    <string name="transfer_delete_title">Удалить перевод?</string>
+    <string name="transfer_delete_message">Перевод %1$s c «%2$s» на «%3$s» будет удалён.</string>
+    <string name="transfer_deleted">Перевод удалён</string>
+    <string name="transfer_row">%1$s → %2$s</string>
+
     <!-- Расходы -->
     <string name="expense_title">Расход</string>
     <string name="expense_amount">Сумма</string>

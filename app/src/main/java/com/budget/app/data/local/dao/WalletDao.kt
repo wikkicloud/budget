@@ -11,6 +11,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WalletDao {
+    /**
+     * Кошельки вместе с балансом: начальная сумма + доходы − расходы,
+     * а также − исходящие и + входящие переводы.
+     */
     @Query(
         """
         SELECT w.id, w.name, w.type, w.initialBalance,
@@ -19,6 +23,10 @@ interface WalletDao {
                     WHERE t.walletId = w.id AND t.type = 'INCOME'), 0)
                 - COALESCE((SELECT SUM(t.amount) FROM transactions t
                     WHERE t.walletId = w.id AND t.type = 'EXPENSE'), 0)
+                - COALESCE((SELECT SUM(tr.amount) FROM transfers tr
+                    WHERE tr.fromWalletId = w.id), 0)
+                + COALESCE((SELECT SUM(tr.amount) FROM transfers tr
+                    WHERE tr.toWalletId = w.id), 0)
                 AS balance
         FROM wallets w
         ORDER BY w.id ASC
@@ -41,6 +49,18 @@ interface WalletDao {
     @Delete
     suspend fun deleteWallet(wallet: WalletEntity)
 
-    @Query("DELETE FROM wallets WHERE id = :id AND NOT EXISTS (SELECT 1 FROM transactions WHERE walletId = :id)")
+    /**
+     * Удаляет кошелёк, только если он не используется ни в операциях, ни в переводах
+     * (переводы ссылаются на кошельки внешними ключами с CASCADE — молча терять их нельзя).
+     */
+    @Query(
+        """
+        DELETE FROM wallets WHERE id = :id
+            AND NOT EXISTS (SELECT 1 FROM transactions WHERE walletId = :id)
+            AND NOT EXISTS (
+                SELECT 1 FROM transfers WHERE fromWalletId = :id OR toWalletId = :id
+            )
+        """
+    )
     suspend fun deleteWalletIfUnused(id: Long): Int
 }

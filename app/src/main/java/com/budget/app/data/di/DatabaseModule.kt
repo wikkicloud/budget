@@ -3,12 +3,13 @@ package com.budget.app.data.di
 import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.budget.app.R
 import com.budget.app.data.local.BudgetDatabase
+import com.budget.app.data.local.DbMigrations
 import com.budget.app.data.local.dao.CategoryDao
 import com.budget.app.data.local.dao.TransactionDao
+import com.budget.app.data.local.dao.TransferDao
 import com.budget.app.data.local.dao.WalletDao
 import com.budget.app.data.local.entity.CategoryEntity
 import com.budget.app.data.local.entity.WalletEntity
@@ -40,11 +41,7 @@ object DatabaseModule {
             BudgetDatabase::class.java,
             "budget_database"
         )
-            .addMigrations(object : Migration(1, 2) {
-                override fun migrate(db: SupportSQLiteDatabase) {
-                    db.execSQL("ALTER TABLE categories ADD COLUMN iconKey TEXT")
-                }
-            })
+            .addMigrations(*DbMigrations.ALL)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
@@ -136,5 +133,11 @@ object DatabaseModule {
     @Singleton
     fun provideTransactionDao(database: BudgetDatabase): TransactionDao {
         return database.transactionDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTransferDao(database: BudgetDatabase): TransferDao {
+        return database.transferDao()
     }
 }
