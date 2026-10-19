@@ -4,8 +4,11 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.budget.app.R
+import com.budget.app.data.local.entity.TransferEntity
 import com.budget.app.data.local.entity.WalletEntity
+import com.budget.app.data.local.model.TransferWithDetails
 import com.budget.app.data.local.model.WalletWithBalance
+import com.budget.app.data.repository.TransferRepository
 import com.budget.app.data.repository.WalletRepository
 import com.budget.app.domain.model.WalletType
 import com.budget.app.util.MoneyFormatter
@@ -26,11 +29,22 @@ data class WalletUi(
     val type: WalletType,
     /** Начальный баланс в копейках — нужен для заполнения формы редактирования. */
     val initialBalance: Long,
-    /** Текущий баланс в копейках: начальный + доходы − расходы. */
+    /** Текущий баланс в копейках: начальный + доходы − расходы + переводы. */
     val balance: Long
 )
 
-/** Состояние открытого диалога добавления или редактирования. */
+/** Перевод в том виде, в каком его показывает экран. */
+data class TransferUi(
+    val id: Long,
+    val fromWalletName: String,
+    val toWalletName: String,
+    /** Сумма в копейках. */
+    val amount: Long,
+    val date: Long,
+    val note: String?
+)
+
+/** Состояние открытого диалога добавления или редактирования кошелька. */
 data class WalletFormState(
     /** null — создание нового кошелька. */
     val id: Long? = null,
@@ -43,28 +57,51 @@ data class WalletFormState(
     val isEditing: Boolean get() = id != null
 }
 
+/** Состояние диалога перевода между кошельками. */
+data class TransferFormState(
+    val fromWalletId: Long? = null,
+    val toWalletId: Long? = null,
+    val amountInput: String = "",
+    val note: String = "",
+    @StringRes val walletsErrorRes: Int? = null,
+    @StringRes val amountErrorRes: Int? = null
+)
+
 /** Разовое сообщение для Snackbar. */
 sealed interface Message {
-    /** Кошелёк не удалось удалить: по нему есть операции. */
+    /** Кошелёк не удалось удалить: по нему есть операции или переводы. */
     data class WalletHasTransactions(val walletName: String) : Message
+
+    /** Перевод сохранён. */
+    data object TransferSaved : Message
+
+    /** Перевод удалён. */
+    data object TransferDeleted : Message
 }
 
 /** Единственное состояние экрана «Кошельки». */
 data class WalletsUiState(
     val wallets: List<WalletUi> = emptyList(),
+    /** Последние переводы между кошельками. */
+    val transfers: List<TransferUi> = emptyList(),
     /** Сумма балансов всех кошельков в копейках. */
     val total: Long = 0,
     val isLoading: Boolean = true,
     val form: WalletFormState? = null,
+    /** Открытый диалог перевода; null — диалог закрыт. */
+    val transferForm: TransferFormState? = null,
     /** Кошелёк, для которого открыт диалог подтверждения удаления. */
     val deleteTarget: WalletUi? = null,
+    /** Перевод, для которого открыт диалог подтверждения удаления. */
+    val deleteTransferTarget: TransferUi? = null,
     /** Разовое сообщение для Snackbar. */
     val message: Message? = null
 )
 
 @HiltViewModel
 class WalletsViewModel @Inject constructor(
-    private val walletRepository: WalletRepository
+    private val walletRepository: WalletRepository,
+    private val transferRepository: TransferRepository
 ) : ViewModel() {
 
     /** Состояние диалогов и разовых сообщений — меняется только событиями с экрана. */
@@ -72,15 +109,22 @@ class WalletsViewModel @Inject constructor(
 
     val uiState: StateFlow<WalletsUiState> = combine(
         walletRepository.getWalletsWithBalance(),
+        transferRepository.getTransfersWithDetails(),
         localState
-    ) { wallets, local ->
+    ) { wallets, transfers, local ->
         val mapped = wallets.map { it.toUi() }
+        val mappedTransfers = transfers.map { it.toUi() }
         WalletsUiState(
             wallets = mapped,
+            transfers = mappedTransfers.take(MAX_VISIBLE_TRANSFERS),
             total = mapped.sumOf { it.balance },
             isLoading = false,
             form = local.form,
+            transferForm = local.transferForm,
             deleteTarget = local.deleteTargetId?.let { id -> mapped.firstOrNull { it.id == id } },
+            deleteTransferTarget = local.deleteTransferId?.let { id ->
+                mappedTransfers.firstOrNull { it.id == id }
+            },
             message = local.message
         )
     }.stateIn(
@@ -164,6 +208,116 @@ class WalletsViewModel @Inject constructor(
         }
     }
 
+    // --- Перевод между кошельками ---
+
+    fun onTransferClick() {
+        val wallets = uiState.value.wallets
+        localState.update {
+            it.copy(
+                transferForm = TransferFormState(
+                    // Кошельки по умолчанию разные: переводить в тот же нельзя.
+                    fromWalletId = wallets.firstOrNull()?.id,
+                    toWalletId = wallets.drop(1).firstOrNull()?.id
+                )
+            )
+        }
+    }
+
+    fun onTransferDismiss() {
+        localState.update { it.copy(transferForm = null) }
+    }
+
+    fun onTransferFromSelect(walletId: Long) {
+        localState.update { state ->
+            // Если «откуда» совпало с «куда», сбрасываем второе — иначе перевод невозможен.
+            val form = state.transferForm ?: return@update state
+            state.copy(
+                transferForm = form.copy(
+                    fromWalletId = walletId,
+                    toWalletId = form.toWalletId.takeIf { it != walletId },
+                    walletsErrorRes = null,
+                    amountErrorRes = null
+                )
+            )
+        }
+    }
+
+    fun onTransferToSelect(walletId: Long) {
+        localState.update { state ->
+            val form = state.transferForm ?: return@update state
+            state.copy(
+                transferForm = form.copy(
+                    toWalletId = walletId,
+                    walletsErrorRes = null,
+                    amountErrorRes = null
+                )
+            )
+        }
+    }
+
+    fun onTransferAmountChange(input: String) {
+        localState.update { state ->
+            state.copy(
+                transferForm = state.transferForm?.copy(
+                    amountInput = input,
+                    amountErrorRes = null
+                )
+            )
+        }
+    }
+
+    fun onTransferNoteChange(note: String) {
+        localState.update { state ->
+            state.copy(transferForm = state.transferForm?.copy(note = note))
+        }
+    }
+
+    fun onTransferSave() {
+        val form = localState.value.transferForm ?: return
+
+        val fromId = form.fromWalletId
+        val toId = form.toWalletId
+        val amount = MoneyFormatter.parseToKopecks(form.amountInput)
+
+        val walletsError = R.string.transfer_error_wallets.takeIf { fromId == null || toId == null || fromId == toId }
+        val amountError = R.string.transfer_error_amount.takeIf { amount == null || amount <= 0 }
+
+        if (walletsError != null || amountError != null || fromId == null || toId == null || amount == null) {
+            localState.update {
+                it.copy(
+                    transferForm = form.copy(
+                        walletsErrorRes = walletsError,
+                        amountErrorRes = amountError
+                    )
+                )
+            }
+            return
+        }
+
+        // Нельзя перевести больше остатка кошелька-источника.
+        val source = uiState.value.wallets.firstOrNull { it.id == fromId }
+        if (source != null && amount > source.balance) {
+            localState.update {
+                it.copy(transferForm = form.copy(amountErrorRes = R.string.transfer_error_not_enough))
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            transferRepository.insertTransfer(
+                TransferEntity(
+                    fromWalletId = fromId,
+                    toWalletId = toId,
+                    amount = amount,
+                    date = System.currentTimeMillis(),
+                    note = form.note.trim().ifBlank { null }
+                )
+            )
+
+            localState.update { it.copy(transferForm = null, message = Message.TransferSaved) }
+        }
+    }
+
     // --- Удаление ---
 
     fun onDeleteClick(wallet: WalletUi) {
@@ -190,6 +344,25 @@ class WalletsViewModel @Inject constructor(
         }
     }
 
+    fun onDeleteTransferClick(transfer: TransferUi) {
+        localState.update { it.copy(deleteTransferId = transfer.id) }
+    }
+
+    fun onDeleteTransferDismiss() {
+        localState.update { it.copy(deleteTransferId = null) }
+    }
+
+    fun onDeleteTransferConfirm() {
+        val id = localState.value.deleteTransferId ?: return
+
+        viewModelScope.launch {
+            transferRepository.deleteTransferById(id)
+            localState.update {
+                it.copy(deleteTransferId = null, message = Message.TransferDeleted)
+            }
+        }
+    }
+
     // --- Разовые сообщения ---
 
     fun onMessageShown() {
@@ -203,13 +376,29 @@ class WalletsViewModel @Inject constructor(
         initialBalance = initialBalance,
         balance = balance
     )
+
+    private fun TransferWithDetails.toUi() = TransferUi(
+        id = id,
+        fromWalletName = fromWalletName,
+        toWalletName = toWalletName,
+        amount = amount,
+        date = date,
+        note = note
+    )
+
+    private companion object {
+        /** Больше переводов на экране «Кошельки» не нужно — список операций ведётся отдельно. */
+        const val MAX_VISIBLE_TRANSFERS = 20
+    }
 }
 
 /** Часть состояния, которой управляет только сам экран. */
 private data class WalletsLocalState(
     val form: WalletFormState? = null,
+    val transferForm: TransferFormState? = null,
     val deleteTargetId: Long? = null,
     /** Имя удаляемого кошелька — его может не быть в списке, если он уже удалён. */
     val deleteTargetName: String? = null,
+    val deleteTransferId: Long? = null,
     val message: Message? = null
 )
