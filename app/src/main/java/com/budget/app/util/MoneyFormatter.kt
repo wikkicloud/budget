@@ -13,6 +13,9 @@ object MoneyFormatter {
     /** Целая часть и не более двух знаков после разделителя. */
     private val AMOUNT_PATTERN = Regex("""\d+(\.\d{0,2})?""")
 
+    /** Копейки — два знака после разделителя, больше в поле суммы не вводится. */
+    private const val MAX_DECIMALS = 2
+
     /**
      * Форматирует сумму из копеек в строку вида "1 234,50 ₽"
      * @param amountInKopecks сумма в копейках
@@ -60,6 +63,37 @@ object MoneyFormatter {
         .chunked(3)
         .joinToString(" ")
         .reversed()
+
+    /**
+     * Очищает ввод суммы: в поле остаются только цифры и один разделитель
+     * с не более чем двумя знаками после него. Буквы и прочие символы отбрасываются,
+     * разделитель без цифр перед ним игнорируется, точка приводится к запятой —
+     * как в [formatPlain]. Годится для `onValueChange` полей суммы.
+     * @param input то, что ввёл пользователь
+     * @return ввод, пригодный для [parseToKopecks]
+     */
+    fun filterAmountInput(input: String): String {
+        val builder = StringBuilder()
+        var separatorSeen = false
+        var decimals = 0
+
+        for (char in input) {
+            if (char in '0'..'9') {
+                // Больше двух знаков после разделителя не бывает — это копейки
+                if (separatorSeen && decimals == MAX_DECIMALS) continue
+                if (separatorSeen) decimals++
+                builder.append(char)
+            } else if (char == ',' || char == '.') {
+                // Второй разделитель и разделитель без цифр перед ним не пропускаем
+                if (separatorSeen || builder.isEmpty()) continue
+                separatorSeen = true
+                builder.append(',')
+            }
+            // Прочие символы (буквы, минус, знак валюты) отбрасываются
+        }
+
+        return builder.toString()
+    }
 
     /**
      * Разбирает введённую сумму в копейки. Без Double/Float — только целые.

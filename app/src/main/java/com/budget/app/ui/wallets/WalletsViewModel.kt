@@ -255,11 +255,13 @@ class WalletsViewModel @Inject constructor(
         }
     }
 
+    /** В поле суммы попадают только цифры и разделитель — буквы не вводятся вовсе. */
     fun onTransferAmountChange(input: String) {
+        val filtered = MoneyFormatter.filterAmountInput(input)
         localState.update { state ->
             state.copy(
                 transferForm = state.transferForm?.copy(
-                    amountInput = input,
+                    amountInput = filtered,
                     amountErrorRes = null
                 )
             )

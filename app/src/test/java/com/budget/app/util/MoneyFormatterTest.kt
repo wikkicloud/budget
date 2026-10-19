@@ -1,6 +1,7 @@
 package com.budget.app.util
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -107,6 +108,63 @@ class MoneyFormatterTest {
         // Максимум, который ещё влезает в Long после умножения на 100
         assertEquals(9_223_372_036_854_775_800L, MoneyFormatter.parseToKopecks("92233720368547758"))
         assertNull(MoneyFormatter.parseToKopecks("92233720368547759"))
+    }
+
+    // --- filterAmountInput ---
+
+    @Test
+    fun `filterAmountInput drops letters and other symbols`() {
+        assertEquals("", MoneyFormatter.filterAmountInput("abc"))
+        assertEquals("1234", MoneyFormatter.filterAmountInput("12a3b4"))
+        assertEquals("1500", MoneyFormatter.filterAmountInput("1 500 ₽"))
+        assertEquals("100", MoneyFormatter.filterAmountInput("-100"))
+    }
+
+    @Test
+    fun `filterAmountInput keeps digits and one separator`() {
+        assertEquals("1234,50", MoneyFormatter.filterAmountInput("1234,50"))
+        assertEquals("0,99", MoneyFormatter.filterAmountInput("0,99"))
+        // Копейки фильтр не дополняет нулём — это делает parseToKopecks
+        assertEquals("1234,5", MoneyFormatter.filterAmountInput("1234,5"))
+        assertEquals(123_450L, MoneyFormatter.parseToKopecks(MoneyFormatter.filterAmountInput("1234,5")))
+    }
+
+    @Test
+    fun `filterAmountInput replaces a dot with a comma`() {
+        assertEquals("1234,50", MoneyFormatter.filterAmountInput("1234.50"))
+    }
+
+    @Test
+    fun `filterAmountInput keeps only the first separator`() {
+        assertEquals("1234,50", MoneyFormatter.filterAmountInput("1234,5,0"))
+        assertEquals("1234,50", MoneyFormatter.filterAmountInput("1234.5,0"))
+    }
+
+    @Test
+    fun `filterAmountInput drops a separator without digits before it`() {
+        assertEquals("", MoneyFormatter.filterAmountInput(","))
+        assertEquals("5", MoneyFormatter.filterAmountInput(".5"))
+        assertEquals("5", MoneyFormatter.filterAmountInput(",5"))
+    }
+
+    @Test
+    fun `filterAmountInput limits the decimals to two`() {
+        assertEquals("12,34", MoneyFormatter.filterAmountInput("12,345"))
+        assertEquals("12,34", MoneyFormatter.filterAmountInput("12,3499"))
+    }
+
+    @Test
+    fun `filterAmountInput result is always parseable`() {
+        val inputs = listOf(
+            "1234", "1 234,50", "12a3b4", "1 500 ₽", "12,345", ",5", ",", "abc", "", "0"
+        )
+        inputs.forEach { input ->
+            val filtered = MoneyFormatter.filterAmountInput(input)
+            // Пустой ввод — не число, любой непустой обязан разбираться
+            if (filtered.isNotEmpty()) {
+                assertNotNull("не разобралось: \"$input\" -> \"$filtered\"", MoneyFormatter.parseToKopecks(filtered))
+            }
+        }
     }
 
     @Test
