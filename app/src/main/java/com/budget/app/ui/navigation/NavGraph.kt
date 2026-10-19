@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.budget.app.ui.analytics.AnalyticsScreen
 import com.budget.app.ui.expenses.ExpensesScreen
 import com.budget.app.ui.income.IncomeScreen
+import com.budget.app.ui.savings.SavingsScreen
 import com.budget.app.ui.wallets.WalletsScreen
 
 @Composable
@@ -28,6 +29,9 @@ fun NavGraph(
         }
         composable(Screen.Wallets.route) {
             WalletsScreen()
+        }
+        composable(Screen.Savings.route) {
+            SavingsScreen()
         }
         composable(Screen.Analytics.route) {
             AnalyticsScreen()

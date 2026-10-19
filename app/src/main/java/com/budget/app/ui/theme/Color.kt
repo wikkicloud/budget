@@ -48,7 +48,9 @@ data class AnalyticsColors(
     val surfaceVariant: Color,
     val onSurfaceVariant: Color,
     val income: Color,
-    val expense: Color
+    val expense: Color,
+    /** Цвет процентов по копилкам — отдельный сегмент столбца доходов. */
+    val interest: Color
 )
 
 val LightAnalyticsColors = AnalyticsColors(
@@ -59,7 +61,8 @@ val LightAnalyticsColors = AnalyticsColors(
     surfaceVariant = LavenderSurfaceVariant,
     onSurfaceVariant = LavenderOnSurfaceVariant,
     income = Color(0xFF76558F),
-    expense = Color(0xFFB56B9A)
+    expense = Color(0xFFB56B9A),
+    interest = Color(0xFF9B7FBC)
 )
 
 val DarkAnalyticsColors = AnalyticsColors(
@@ -70,7 +73,8 @@ val DarkAnalyticsColors = AnalyticsColors(
     surfaceVariant = LavenderSurfaceVariantDark,
     onSurfaceVariant = LavenderOnSurfaceVariantDark,
     income = Color(0xFFDDB8F5),
-    expense = Color(0xFFE5A5CA)
+    expense = Color(0xFFE5A5CA),
+    interest = Color(0xFFB39DDB)
 )
 
 val LocalAnalyticsColors = staticCompositionLocalOf { LightAnalyticsColors }

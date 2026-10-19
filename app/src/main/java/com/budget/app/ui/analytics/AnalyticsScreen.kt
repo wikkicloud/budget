@@ -119,6 +119,7 @@ fun AnalyticsScreen(
                 SummaryCard(
                     totalExpense = state.totalExpense,
                     totalIncome = state.totalIncome,
+                    totalInterest = state.totalInterest,
                     difference = state.difference
                 )
             }
@@ -154,6 +155,14 @@ fun AnalyticsScreen(
                         state.walletSlices.forEach { slice ->
                             WalletRow(slice = slice, total = state.totalExpense)
                         }
+                    }
+                }
+            }
+
+            if (state.savingsSlices.isNotEmpty()) {
+                item {
+                    SectionCard(title = stringResource(R.string.analytics_savings)) {
+                        SavingsBlock(state = state)
                     }
                 }
             }
@@ -226,11 +235,12 @@ private fun PeriodSwitcher(
     }
 }
 
-/** Итоги периода: расходы, доходы и разница. */
+/** Итоги периода: расходы, доходы (включая проценты) и разница. */
 @Composable
 private fun SummaryCard(
     totalExpense: Long,
     totalIncome: Long,
+    totalInterest: Long,
     difference: Long,
     modifier: Modifier = Modifier
 ) {
@@ -259,12 +269,115 @@ private fun SummaryCard(
                 amount = totalIncome,
                 amountColor = MaterialTheme.colorScheme.onSurface
             )
+            // Проценты уже входят в «итого доходов» — здесь они показаны отдельной строкой
+            if (totalInterest > 0) {
+                SummaryRow(
+                    label = stringResource(R.string.analytics_interest_category),
+                    amount = totalInterest,
+                    amountColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             SummaryRow(
                 label = stringResource(R.string.analytics_difference),
                 amount = difference,
                 amountColor = differenceColor
             )
         }
+    }
+}
+
+/** Блок «Копилки»: итог, статистика периода и прогресс по каждой цели. */
+@Composable
+private fun SavingsBlock(state: AnalyticsUiState) {
+    val analytics = analyticsColors()
+
+    Column {
+        SavingsStatRow(
+            label = stringResource(R.string.analytics_savings_total),
+            amount = state.savingsTotal,
+            bold = true
+        )
+        SavingsStatRow(
+            label = stringResource(R.string.analytics_savings_deposited),
+            amount = state.savingsDeposited
+        )
+        SavingsStatRow(
+            label = stringResource(R.string.analytics_savings_withdrawn),
+            amount = state.savingsWithdrawn
+        )
+        SavingsStatRow(
+            label = stringResource(R.string.analytics_savings_interest),
+            amount = state.totalInterest
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        state.savingsSlices.forEach { slice ->
+            Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = slice.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = slice.progressPercent?.let { percent ->
+                            "${percent} % · ${MoneyFormatter.format(slice.balance)}"
+                        } ?: MoneyFormatter.format(slice.balance),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Прогресс показываем только у копилок с целью
+                val progress = slice.progress
+                if (progress != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(analytics.surface)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(progress)
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(analytics.accent)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Строка статистики копилок: подпись слева, сумма справа. */
+@Composable
+private fun SavingsStatRow(
+    label: String,
+    amount: Long,
+    bold: Boolean = false
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = MoneyFormatter.format(amount),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal
+        )
     }
 }
 

@@ -5,6 +5,7 @@
     <string name="screen_expenses">Расход</string>
     <string name="screen_income">Доход</string>
     <string name="screen_wallets">Кошельки</string>
+    <string name="screen_savings">Копилки</string>
     <string name="screen_analytics">Аналитика</string>
 
     <!-- Категории -->
@@ -55,6 +56,50 @@
     <string name="transfer_delete_message">Перевод %1$s c «%2$s» на «%3$s» будет удалён.</string>
     <string name="transfer_deleted">Перевод удалён</string>
     <string name="transfer_row">%1$s → %2$s</string>
+
+    <!-- Копилки -->
+    <string name="savings_add">Добавить копилку</string>
+    <string name="savings_new_title">Новая копилка</string>
+    <string name="savings_name">Название</string>
+    <string name="savings_target">Цель</string>
+    <string name="savings_target_optional">Необязательно</string>
+    <string name="savings_created_at">Создана %1$s</string>
+    <string name="savings_total">Всего в копилках</string>
+    <string name="savings_empty">Копилок пока нет</string>
+    <string name="savings_empty_hint">Нажмите «+», чтобы создать первую копилку</string>
+    <string name="savings_goal">Цель: %1$s</string>
+    <string name="savings_progress">%1$d %% от цели</string>
+    <string name="savings_no_goal">Без цели</string>
+    <string name="savings_error_name">Введите название копилки</string>
+    <string name="savings_error_target">Введите сумму цели больше нуля</string>
+    <string name="savings_deposit">Пополнить</string>
+    <string name="savings_withdraw">Вывести</string>
+    <string name="savings_interest">Начислить проценты</string>
+    <string name="savings_interest_short">Проценты</string>
+    <string name="savings_deposit_title">Пополнение копилки</string>
+    <string name="savings_withdraw_title">Возврат из копилки</string>
+    <string name="savings_interest_title">Начисление процентов</string>
+    <string name="savings_wallet_from">С кошелька</string>
+    <string name="savings_wallet_to">На кошелёк</string>
+    <string name="savings_amount">Сумма</string>
+    <string name="savings_interest_hint">Проценты увеличивают копилку и считаются доходом в аналитике; баланс кошельков не меняется.</string>
+    <string name="savings_balance">В копилке: %1$s</string>
+    <string name="savings_error_wallet">Выберите кошелёк</string>
+    <string name="savings_error_amount">Введите сумму больше нуля</string>
+    <string name="savings_error_not_enough">Недостаточно средств на кошельке</string>
+    <string name="savings_error_not_enough_savings">В копилке нет такой суммы</string>
+    <string name="savings_created">Копилка создана</string>
+    <string name="savings_deleted">Копилка удалена</string>
+    <string name="savings_delete_title">Удалить копилку?</string>
+    <string name="savings_delete_message">Копилка «%1$s» со всеми операциями (%2$d) будет удалена. Деньги вернутся в кошельки только через вывод из копилки.</string>
+    <string name="savings_operations_recent">Последние операции по копилкам</string>
+    <string name="savings_operations_empty">Операций по копилкам пока нет</string>
+    <string name="savings_operation_deposit">Пополнение</string>
+    <string name="savings_operation_withdraw">Вывод</string>
+    <string name="savings_operation_interest">Проценты</string>
+    <string name="savings_operation_no_wallet">Без кошелька</string>
+    <string name="savings_operation_delete_title">Удалить операцию?</string>
+    <string name="savings_operation_delete_message">Операция на %1$s по копилке «%2$s» будет удалена.</string>
 
     <!-- Расходы -->
     <string name="expense_title">Расход</string>
@@ -126,6 +171,12 @@
     <string name="analytics_period_range">%1$s — %2$s</string>
     <string name="analytics_custom_title">Выберите диапазон</string>
     <string name="analytics_custom_apply">Применить</string>
+    <string name="analytics_savings">Копилки</string>
+    <string name="analytics_savings_total">Всего в копилках</string>
+    <string name="analytics_savings_deposited">Пополнено за период</string>
+    <string name="analytics_savings_withdrawn">Снято за период</string>
+    <string name="analytics_savings_interest">Начислено процентов</string>
+    <string name="analytics_interest_category">Проценты по депозиту</string>
 
     <!-- Месяцы (короткие подписи на графике) -->
     <string name="month_jan">янв</string>

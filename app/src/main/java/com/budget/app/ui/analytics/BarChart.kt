@@ -46,9 +46,15 @@ fun IncomeExpenseBarChart(
     val analytics = analyticsColors()
     val incomeColor = analytics.income
     val expenseColor = analytics.expense
+    val interestColor = analytics.interest
     val axisColor = analytics.surfaceVariant
 
-    val maxValue = points.maxOf { maxOf(it.income, it.expense) }.coerceAtLeast(1L)
+    // Проценты по копилкам — часть столбца доходов, поэтому он может быть выше самих доходов
+    val maxValue = points
+        .maxOf { maxOf(it.income + it.interest, it.expense) }
+        .coerceAtLeast(1L)
+
+    val hasInterest = points.any { it.interest > 0 }
 
     // При большом числе интервалов подписываем только каждый N-й столбец — иначе подписи сливаются
     val labelStep = (points.size / MAX_LABELS).coerceAtLeast(1)
@@ -60,7 +66,12 @@ fun IncomeExpenseBarChart(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        ChartLegend(incomeColor = incomeColor, expenseColor = expenseColor)
+        ChartLegend(
+            incomeColor = incomeColor,
+            expenseColor = expenseColor,
+            interestColor = interestColor,
+            showInterest = hasInterest
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -77,9 +88,11 @@ fun IncomeExpenseBarChart(
                     BarGroup(
                         income = point.income,
                         expense = point.expense,
+                        interest = point.interest,
                         maxValue = maxValue,
                         incomeColor = incomeColor,
                         expenseColor = expenseColor,
+                        interestColor = interestColor,
                         axisColor = axisColor
                     )
 
@@ -103,9 +116,11 @@ fun IncomeExpenseBarChart(
 private fun BarGroup(
     income: Long,
     expense: Long,
+    interest: Long,
     maxValue: Long,
     incomeColor: Color,
     expenseColor: Color,
+    interestColor: Color,
     axisColor: Color
 ) {
     Canvas(
@@ -124,14 +139,28 @@ private fun BarGroup(
             strokeWidth = 1f
         )
 
-        drawBar(
-            left = gap,
-            width = barWidth,
-            value = income,
-            maxValue = maxValue,
-            color = incomeColor,
-            corner = corner
-        )
+        // Столбец доходов: сначала проценты по копилкам, затем сами доходы
+        val incomeHeight = barHeight(income, maxValue)
+        val interestHeight = barHeight(interest, maxValue)
+
+        if (interest > 0) {
+            drawRoundRect(
+                color = interestColor,
+                topLeft = Offset(gap, size.height - incomeHeight - interestHeight),
+                size = Size(barWidth, interestHeight),
+                cornerRadius = corner
+            )
+        }
+
+        if (income > 0) {
+            drawRoundRect(
+                color = incomeColor,
+                topLeft = Offset(gap, size.height - incomeHeight),
+                size = Size(barWidth, incomeHeight),
+                cornerRadius = corner
+            )
+        }
+
         drawBar(
             left = gap * 2f + barWidth,
             width = barWidth,
@@ -143,6 +172,10 @@ private fun BarGroup(
     }
 }
 
+/** Высота столбца для суммы [value] при максимуме [maxValue]. */
+private fun DrawScope.barHeight(value: Long, maxValue: Long): Float =
+    (value.toFloat() / maxValue * size.height).coerceAtLeast(0f)
+
 private fun DrawScope.drawBar(
     left: Float,
     width: Float,
@@ -151,7 +184,7 @@ private fun DrawScope.drawBar(
     color: Color,
     corner: CornerRadius
 ) {
-    val height = (value.toFloat() / maxValue * size.height).coerceAtLeast(0f)
+    val height = barHeight(value, maxValue)
     if (height <= 0f) return
 
     drawRoundRect(
@@ -163,10 +196,25 @@ private fun DrawScope.drawBar(
 }
 
 @Composable
-private fun ChartLegend(incomeColor: Color, expenseColor: Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        LegendMark(color = incomeColor, label = stringResource(R.string.analytics_legend_income))
-        LegendMark(color = expenseColor, label = stringResource(R.string.analytics_legend_expense))
+private fun ChartLegend(
+    incomeColor: Color,
+    expenseColor: Color,
+    interestColor: Color,
+    showInterest: Boolean
+) {
+    // Легенда без переноса: столпотворение подписей обрезало бы её на узком экране
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            LegendMark(color = incomeColor, label = stringResource(R.string.analytics_legend_income))
+            LegendMark(color = expenseColor, label = stringResource(R.string.analytics_legend_expense))
+        }
+
+        if (showInterest) {
+            LegendMark(
+                color = interestColor,
+                label = stringResource(R.string.analytics_interest_category)
+            )
+        }
     }
 }
 
