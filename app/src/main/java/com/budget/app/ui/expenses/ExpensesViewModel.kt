@@ -79,6 +79,8 @@ data class ExpensesUiState(
     val deleteCategoryTarget: CategoryEntity? = null,
     /** Число операций deleteCategoryTarget — подгружается перед показом диалога. */
     val deleteCategoryUsageCount: Int = 0,
+    /** Подсказки описания: по вводу или, если поле пустое, самые частые. */
+    val suggestions: List<ExpenseSuggestion> = emptyList(),
     /** Разовое сообщение для Snackbar. */
     val messageRes: Int? = null
 )
@@ -124,6 +126,7 @@ class ExpensesViewModel @Inject constructor(
                 categories.firstOrNull { it.id == id }
             },
             deleteCategoryUsageCount = local.deleteCategoryUsageCount,
+            suggestions = ExpenseSuggestions.build(mapped, local.form.description),
             messageRes = local.messageRes
         )
     }.stateIn(
@@ -140,6 +143,29 @@ class ExpensesViewModel @Inject constructor(
 
     fun onDescriptionChange(input: String) {
         localState.update { it.copy(form = it.form.copy(description = input)) }
+    }
+
+    /**
+     * Выбрана подсказка описания: подставляем описание, а также категорию и кошелёк последнего
+     * расхода с таким названием. Сумма подставляется только в пустое поле. Всё можно изменить.
+     */
+    fun onSuggestionSelect(suggestion: ExpenseSuggestion) {
+        localState.update { state ->
+            val form = state.form
+            state.copy(
+                form = form.copy(
+                    description = suggestion.description,
+                    categoryId = suggestion.categoryId,
+                    walletId = suggestion.walletId,
+                    amountInput = if (form.amountInput.isBlank()) {
+                        MoneyFormatter.formatPlain(suggestion.amount)
+                    } else {
+                        form.amountInput
+                    },
+                    walletErrorRes = null
+                )
+            )
+        }
     }
 
     fun onCategorySelect(categoryId: Long?) {

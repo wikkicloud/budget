@@ -42,6 +42,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -141,6 +142,7 @@ fun ExpensesScreen(
                         state = state,
                         onAmountChange = viewModel::onAmountChange,
                         onDescriptionChange = viewModel::onDescriptionChange,
+                        onSuggestionSelect = viewModel::onSuggestionSelect,
                         onCategorySelect = viewModel::onCategorySelect,
                         onAddCategoryClick = viewModel::onAddCategoryClick,
                         onEditCategoryClick = viewModel::onEditCategoryClick,
@@ -219,6 +221,7 @@ private fun ExpenseFormCard(
     state: ExpensesUiState,
     onAmountChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
+    onSuggestionSelect: (ExpenseSuggestion) -> Unit,
     onCategorySelect: (Long?) -> Unit,
     onAddCategoryClick: () -> Unit,
     onEditCategoryClick: (CategoryEntity) -> Unit,
@@ -260,6 +263,23 @@ private fun ExpenseFormCard(
                 label = { Text(stringResource(R.string.expense_description)) },
                 singleLine = true
             )
+
+            if (state.suggestions.isNotEmpty()) {
+                Spacer(modifier = Modifier.size(8.dp))
+
+                // Подсказки из прошлых расходов: тап подставляет описание, категорию и кошелёк.
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    state.suggestions.forEach { suggestion ->
+                        SuggestionChip(
+                            onClick = { onSuggestionSelect(suggestion) },
+                            label = { Text(suggestion.description) }
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.size(8.dp))
 
