@@ -28,6 +28,9 @@ interface CategoryDao {
     @Delete
     suspend fun deleteCategory(category: CategoryEntity)
 
+    @Query("SELECT COUNT(*) FROM categories")
+    suspend fun countCategories(): Int
+
     @Query("SELECT EXISTS(SELECT 1 FROM categories WHERE LOWER(name) = LOWER(:name))")
     suspend fun categoryNameExists(name: String): Boolean
 

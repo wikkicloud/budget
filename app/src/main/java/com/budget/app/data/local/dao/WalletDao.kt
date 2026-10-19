@@ -45,6 +45,9 @@ interface WalletDao {
     @Query("SELECT * FROM wallets WHERE id = :id")
     suspend fun getWalletById(id: Long): WalletEntity?
 
+    @Query("SELECT COUNT(*) FROM wallets")
+    suspend fun countWallets(): Int
+
     @Insert
     suspend fun insertWallet(wallet: WalletEntity): Long
 

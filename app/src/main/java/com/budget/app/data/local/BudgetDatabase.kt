@@ -23,7 +23,10 @@ import com.budget.app.data.local.entity.WalletEntity
         SavingsEntity::class,
         SavingsOperationEntity::class
     ],
-    version = 4,
+    // 5 — не смена схемы, а разовая починка данных: на устройствах уже лежит пустая база версии 4
+    // (её пересоздала разрушающая миграция, а предзаполнение тогда не вызывалось), и без повышения
+    // версии предустановленные категории и кошельки в ней не появятся. Тестовые данные стираются.
+    version = 5,
     exportSchema = false
 )
 abstract class BudgetDatabase : RoomDatabase() {
