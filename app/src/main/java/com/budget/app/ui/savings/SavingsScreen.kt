@@ -488,11 +488,14 @@ private fun SavingsFormDialog(
                 Spacer(modifier = Modifier.size(16.dp))
 
                 OutlinedTextField(
+                    // Цель — сумма: разряды уже разделены в состоянии формы, пробелы разбирает parseToKopecks
                     value = form.targetInput,
                     onValueChange = onTargetChange,
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(stringResource(R.string.savings_target)) },
                     placeholder = { Text(stringResource(R.string.savings_target_optional)) },
+                    // Валюта, как в остальных суммах: цифры вводит пользователь
+                    suffix = { Text(MoneyFormatter.CURRENCY) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = form.targetErrorRes != null,

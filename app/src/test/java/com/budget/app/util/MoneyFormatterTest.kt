@@ -167,6 +167,71 @@ class MoneyFormatterTest {
         }
     }
 
+    // --- groupAmountInput ---
+
+    @Test
+    fun `groupAmountInput separates thousands while typing`() {
+        assertEquals("1 000", MoneyFormatter.groupAmountInput("1000"))
+        assertEquals("1 000 000", MoneyFormatter.groupAmountInput("1000000"))
+        // Уже разделённый ввод не портится: пробелы отбрасываются, разряды расставляются заново
+        assertEquals("1 000 000", MoneyFormatter.groupAmountInput("1 000 000"))
+        assertEquals("12 345 678", MoneyFormatter.groupAmountInput("12345678"))
+    }
+
+    @Test
+    fun `groupAmountInput keeps short numbers as they are`() {
+        assertEquals("0", MoneyFormatter.groupAmountInput("0"))
+        assertEquals("7", MoneyFormatter.groupAmountInput("7"))
+        assertEquals("999", MoneyFormatter.groupAmountInput("999"))
+    }
+
+    @Test
+    fun `groupAmountInput separates only the whole part`() {
+        assertEquals("1 234,50", MoneyFormatter.groupAmountInput("1234,50"))
+        assertEquals("1 234,5", MoneyFormatter.groupAmountInput("1234,5"))
+        // Копейки без рублей фильтр отбрасывает вместе с разделителем: «,5» — это 5 рублей,
+        // а «0,5» — уже готовый ввод и остаётся как есть
+        assertEquals("5", MoneyFormatter.groupAmountInput(",5"))
+        assertEquals("0,5", MoneyFormatter.groupAmountInput("0,5"))
+    }
+
+    @Test
+    fun `groupAmountInput cleans the input like filterAmountInput`() {
+        assertEquals("", MoneyFormatter.groupAmountInput(""))
+        assertEquals("", MoneyFormatter.groupAmountInput("abc"))
+        assertEquals("1 500", MoneyFormatter.groupAmountInput("1 500 ₽"))
+        assertEquals("12,34", MoneyFormatter.groupAmountInput("12,345"))
+        assertEquals("1 000,50", MoneyFormatter.groupAmountInput("1000.5,0"))
+    }
+
+    @Test
+    fun `groupAmountInput result is always parseable`() {
+        val inputs = listOf("1000", "1 000 000,50", "12a3b4", "1 500 ₽", ",5", "", "0", "999999999")
+        inputs.forEach { input ->
+            val grouped = MoneyFormatter.groupAmountInput(input)
+            // Пустой ввод — не число, любой непустой обязан разбираться обратно в копейки
+            if (grouped.isNotEmpty()) {
+                assertNotNull(
+                    "не разобралось: \"$input\" -> \"$grouped\"",
+                    MoneyFormatter.parseToKopecks(grouped)
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `groupAmountInput and parseToKopecks make a round trip`() {
+        val amounts = listOf(0L, 700L, 100_000L, 123_450L, 100_000_000L)
+        amounts.forEach { kopecks ->
+            assertEquals(
+                kopecks,
+                MoneyFormatter.parseToKopecks(
+                    MoneyFormatter.groupAmountInput(MoneyFormatter.formatPlain(kopecks))
+                )
+            )
+        }
+    }
+
     @Test
     fun `parseToKopecks and formatPlain make a round trip`() {
         val amounts = listOf(0L, 1L, 99L, 100L, 123_450L, 123_456_789L)

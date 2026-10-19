@@ -4,8 +4,8 @@ import kotlin.math.abs
 
 object MoneyFormatter {
 
-    /** Символ валюты, дописывается к сумме в [format]. */
-    private const val CURRENCY = "₽"
+    /** Символ валюты, дописывается к сумме в [format]. Он же нужен полям ввода сумм. */
+    const val CURRENCY = "₽"
 
     /** Пробелы и неразрывные пробелы, которые могут попасть в ввод вместе с числом. */
     private val SPACES = Regex("""[\s ]+""")
@@ -58,7 +58,10 @@ object MoneyFormatter {
         if (amountInKopecks < 0) "-" else ""
 
     /** Разбивает неотрицательное число на разряды по три: 1234567 -> "1 234 567". */
-    private fun group(value: Long): String = value.toString()
+    private fun group(value: Long): String = groupDigits(value.toString())
+
+    /** Разбивает строку из цифр на разряды по три: "1234567" -> "1 234 567". */
+    private fun groupDigits(digits: String): String = digits
         .reversed()
         .chunked(3)
         .joinToString(" ")
@@ -69,6 +72,7 @@ object MoneyFormatter {
      * с не более чем двумя знаками после него. Буквы и прочие символы отбрасываются,
      * разделитель без цифр перед ним игнорируется, точка приводится к запятой —
      * как в [formatPlain]. Годится для `onValueChange` полей суммы.
+     * Пробелы — разделители разрядов — тоже отбрасываются, как и в [parseToKopecks].
      * @param input то, что ввёл пользователь
      * @return ввод, пригодный для [parseToKopecks]
      */
@@ -93,6 +97,28 @@ object MoneyFormatter {
         }
 
         return builder.toString()
+    }
+
+    /**
+     * Готовит ввод для отображения в поле суммы: чистит его как [filterAmountInput]
+     * и сразу разделяет целую часть на разряды — «1000000» превращается в «1 000 000»
+     * прямо во время набора, как в [formatPlain]. Копейки не дополняются нулём:
+     * «12,5» так и остаётся «12,5», пока пользователь не введёт второй знак.
+     * Годится для `onValueChange` полей суммы, где нужна сумма с разрядами.
+     * @param input то, что ввёл пользователь
+     * @return ввод, пригодный для [parseToKopecks]
+     */
+    fun groupAmountInput(input: String): String {
+        val filtered = filterAmountInput(input)
+        // Пустой ввод остаётся пустым: поле для суммы необязательно и должно очищаться до конца
+        if (filtered.isEmpty()) return filtered
+
+        // Разделитель разбираем до группировки: отделять разряды нужно только в целой части
+        val separatorIndex = filtered.indexOf(',')
+        val integerDigits = if (separatorIndex == -1) filtered else filtered.substring(0, separatorIndex)
+        val kopecks = if (separatorIndex == -1) "" else filtered.substring(separatorIndex)
+
+        return groupDigits(integerDigits) + kopecks
     }
 
     /**

@@ -56,7 +56,7 @@ data class SavingsOperationUi(
 /** Состояние диалога создания копилки. */
 data class SavingsFormState(
     val name: String = "",
-    /** Цель в виде введённой строки; пусто — копилка без цели. */
+    /** Цель в виде введённой суммы («1 000 000,50»); пусто — копилка без цели. */
     val targetInput: String = "",
     @StringRes val nameErrorRes: Int? = null,
     @StringRes val targetErrorRes: Int? = null
@@ -172,7 +172,8 @@ class SavingsViewModel @Inject constructor(
     }
 
     fun onFormTargetChange(input: String) {
-        val filtered = MoneyFormatter.filterAmountInput(input)
+        // Цель — сумма: разряды разделяются прямо при наборе («1 000 000»)
+        val filtered = MoneyFormatter.groupAmountInput(input)
         localState.update { state ->
             state.copy(form = state.form?.copy(targetInput = filtered, targetErrorRes = null))
         }
