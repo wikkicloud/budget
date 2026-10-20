@@ -13,12 +13,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -27,7 +30,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -35,11 +37,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SuggestionChip
@@ -123,36 +127,41 @@ fun ExpensesScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = stringResource(R.string.screen_expenses),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-        )
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        floatingActionButton = {
+            FloatingActionButton(onClick = viewModel::onAddClick) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = stringResource(R.string.expense_add)
+                )
+            }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { contentPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding)
+        ) {
+            Text(
+                text = stringResource(R.string.screen_expenses),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            )
 
-        Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                // Нижний отступ — чтобы список не уходил под кнопку «+»
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 4.dp,
+                    bottom = 88.dp
+                ),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item {
-                    ExpenseFormCard(
-                        state = state,
-                        onAmountChange = viewModel::onAmountChange,
-                        onDescriptionChange = viewModel::onDescriptionChange,
-                        onSuggestionSelect = viewModel::onSuggestionSelect,
-                        onCategorySelect = viewModel::onCategorySelect,
-                        onAddCategoryClick = viewModel::onAddCategoryClick,
-                        onEditCategoryClick = viewModel::onEditCategoryClick,
-                        onDeleteCategoryClick = viewModel::onDeleteCategoryClick,
-                        onWalletSelect = viewModel::onWalletSelect,
-                        onSave = viewModel::onSave,
-                        onCancelEdit = viewModel::onCancelEdit
-                    )
-                }
-
                 item {
                     Text(
                         text = stringResource(R.string.expenses_recent),
@@ -179,12 +188,24 @@ fun ExpensesScreen(
                     }
                 }
             }
-
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
         }
+    }
+
+    state.form?.let { form ->
+        ExpenseFormDialog(
+            state = state,
+            form = form,
+            onAmountChange = viewModel::onAmountChange,
+            onDescriptionChange = viewModel::onDescriptionChange,
+            onSuggestionSelect = viewModel::onSuggestionSelect,
+            onCategorySelect = viewModel::onCategorySelect,
+            onAddCategoryClick = viewModel::onAddCategoryClick,
+            onEditCategoryClick = viewModel::onEditCategoryClick,
+            onDeleteCategoryClick = viewModel::onDeleteCategoryClick,
+            onWalletSelect = viewModel::onWalletSelect,
+            onSave = viewModel::onSave,
+            onDismiss = viewModel::onFormDismiss
+        )
     }
 
     state.deleteTarget?.let { expense ->
@@ -215,10 +236,12 @@ fun ExpensesScreen(
     }
 }
 
+/** Диалог добавления / редактирования расхода — открывается кнопкой «+» или из строки списка. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ExpenseFormCard(
+private fun ExpenseFormDialog(
     state: ExpensesUiState,
+    form: ExpenseFormState,
     onAmountChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onSuggestionSelect: (ExpenseSuggestion) -> Unit,
@@ -228,97 +251,93 @@ private fun ExpenseFormCard(
     onDeleteCategoryClick: (CategoryEntity) -> Unit,
     onWalletSelect: (Long?) -> Unit,
     onSave: () -> Unit,
-    onCancelEdit: () -> Unit
+    onDismiss: () -> Unit
 ) {
-    val form = state.form
-
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
             Text(
-                text = stringResource(
-                    if (form.isEditing) R.string.expense_edit_title else R.string.expense_title
-                ),
-                style = MaterialTheme.typography.titleMedium
+                stringResource(
+                    if (form.isEditing) R.string.expense_edit_title else R.string.expense_new_title
+                )
             )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 480.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                OutlinedTextField(
+                    value = form.amountInput,
+                    onValueChange = onAmountChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.expense_amount)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = form.amountErrorRes != null,
+                    supportingText = form.amountErrorRes?.let { { Text(stringResource(it)) } }
+                )
 
-            Spacer(modifier = Modifier.size(12.dp))
-
-            OutlinedTextField(
-                value = form.amountInput,
-                onValueChange = onAmountChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.expense_amount)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                isError = form.amountErrorRes != null,
-                supportingText = form.amountErrorRes?.let { { Text(stringResource(it)) } }
-            )
-
-            Spacer(modifier = Modifier.size(8.dp))
-
-            OutlinedTextField(
-                value = form.description,
-                onValueChange = onDescriptionChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.expense_description)) },
-                singleLine = true
-            )
-
-            if (state.suggestions.isNotEmpty()) {
                 Spacer(modifier = Modifier.size(8.dp))
 
-                // Подсказки из прошлых расходов: тап подставляет описание, категорию и кошелёк.
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    state.suggestions.forEach { suggestion ->
-                        SuggestionChip(
-                            onClick = { onSuggestionSelect(suggestion) },
-                            label = { Text(suggestion.description) }
-                        )
+                OutlinedTextField(
+                    value = form.description,
+                    onValueChange = onDescriptionChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.expense_description)) },
+                    singleLine = true
+                )
+
+                if (state.suggestions.isNotEmpty()) {
+                    Spacer(modifier = Modifier.size(8.dp))
+
+                    // Подсказки из прошлых расходов: тап подставляет описание, категорию и кошелёк.
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        state.suggestions.forEach { suggestion ->
+                            SuggestionChip(
+                                onClick = { onSuggestionSelect(suggestion) },
+                                label = { Text(suggestion.description) }
+                            )
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.size(8.dp))
+
+                CategoryDropdown(
+                    selectedId = form.categoryId,
+                    categories = state.categories,
+                    onSelect = onCategorySelect,
+                    onAddCategoryClick = onAddCategoryClick,
+                    onEditCategoryClick = onEditCategoryClick,
+                    onDeleteCategoryClick = onDeleteCategoryClick
+                )
+
+                Spacer(modifier = Modifier.size(8.dp))
+
+                WalletDropdown(
+                    selectedId = form.walletId,
+                    wallets = state.wallets,
+                    errorRes = form.walletErrorRes,
+                    onSelect = onWalletSelect
+                )
             }
-
-            Spacer(modifier = Modifier.size(8.dp))
-
-            CategoryDropdown(
-                selectedId = form.categoryId,
-                categories = state.categories,
-                onSelect = onCategorySelect,
-                onAddCategoryClick = onAddCategoryClick,
-                onEditCategoryClick = onEditCategoryClick,
-                onDeleteCategoryClick = onDeleteCategoryClick
-            )
-
-            Spacer(modifier = Modifier.size(8.dp))
-
-            WalletDropdown(
-                selectedId = form.walletId,
-                wallets = state.wallets,
-                errorRes = form.walletErrorRes,
-                onSelect = onWalletSelect
-            )
-
-            Spacer(modifier = Modifier.size(16.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = onSave,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(R.string.expense_save))
-                }
-
-                if (form.isEditing) {
-                    OutlinedButton(onClick = onCancelEdit) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                }
+        },
+        confirmButton = {
+            TextButton(onClick = onSave) {
+                Text(stringResource(R.string.expense_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
             }
         }
-    }
+    )
 }
 
 /** Собственная ли категория (добавленная пользователем), а не предзаполненная. */

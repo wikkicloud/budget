@@ -67,11 +67,10 @@ data class ExpensesUiState(
     val categories: List<CategoryEntity> = emptyList(),
     val wallets: List<WalletEntity> = emptyList(),
     val isLoading: Boolean = true,
-    val form: ExpenseFormState = ExpenseFormState(),
+    /** Открытый диалог добавления или редактирования расхода; null — диалог закрыт. */
+    val form: ExpenseFormState? = null,
     /** Расход, для которого открыт диалог подтверждения удаления. */
     val deleteTarget: ExpenseUi? = null,
-    /** true — форма показывает редактирование существующего расхода. */
-    val isEditing: Boolean = false,
     /** Диалог добавления / редактирования собственной категории. */
     val isCategoryDialogVisible: Boolean = false,
     val newCategory: NewCategoryState = NewCategoryState(),
@@ -119,14 +118,14 @@ class ExpensesViewModel @Inject constructor(
             isLoading = false,
             form = local.form,
             deleteTarget = local.deleteTargetId?.let { id -> mapped.firstOrNull { it.id == id } },
-            isEditing = local.form.isEditing,
             isCategoryDialogVisible = local.isCategoryDialogVisible,
             newCategory = local.newCategory,
             deleteCategoryTarget = local.deleteCategoryTargetId?.let { id ->
                 categories.firstOrNull { it.id == id }
             },
             deleteCategoryUsageCount = local.deleteCategoryUsageCount,
-            suggestions = ExpenseSuggestions.build(mapped, local.form.description),
+            // Подсказки нужны только в открытом диалоге: по текущему вводу или, если поле пустое, самые частые.
+            suggestions = local.form?.let { ExpenseSuggestions.build(mapped, it.description) }.orEmpty(),
             messageRes = local.messageRes
         )
     }.stateIn(
@@ -137,12 +136,26 @@ class ExpensesViewModel @Inject constructor(
 
     // --- Форма ---
 
+    /** Кнопка «+»: диалог добавления с пустыми полями. */
+    fun onAddClick() {
+        localState.update { it.copy(form = ExpenseFormState()) }
+    }
+
+    /** Закрыть диалог без сохранения. */
+    fun onFormDismiss() {
+        localState.update { it.copy(form = null) }
+    }
+
     fun onAmountChange(input: String) {
-        localState.update { it.copy(form = it.form.copy(amountInput = input, amountErrorRes = null)) }
+        localState.update { state ->
+            state.copy(form = state.form?.copy(amountInput = input, amountErrorRes = null))
+        }
     }
 
     fun onDescriptionChange(input: String) {
-        localState.update { it.copy(form = it.form.copy(description = input)) }
+        localState.update { state ->
+            state.copy(form = state.form?.copy(description = input))
+        }
     }
 
     /**
@@ -151,7 +164,7 @@ class ExpensesViewModel @Inject constructor(
      */
     fun onSuggestionSelect(suggestion: ExpenseSuggestion) {
         localState.update { state ->
-            val form = state.form
+            val form = state.form ?: return@update state
             state.copy(
                 form = form.copy(
                     description = suggestion.description,
@@ -169,7 +182,9 @@ class ExpensesViewModel @Inject constructor(
     }
 
     fun onCategorySelect(categoryId: Long?) {
-        localState.update { it.copy(form = it.form.copy(categoryId = categoryId)) }
+        localState.update { state ->
+            state.copy(form = state.form?.copy(categoryId = categoryId))
+        }
     }
 
     fun onAddCategoryClick() {
@@ -234,7 +249,8 @@ class ExpensesViewModel @Inject constructor(
                     it.copy(
                         isCategoryDialogVisible = false,
                         newCategory = NewCategoryState(),
-                        form = it.form.copy(categoryId = resultId)
+                        // Новая категория сразу выбрана в форме расхода
+                        form = it.form?.copy(categoryId = resultId)
                     )
                 }
             }
@@ -266,7 +282,7 @@ class ExpensesViewModel @Inject constructor(
                     deleteCategoryTargetId = null,
                     deleteCategoryUsageCount = 0,
                     // Категория удалена — в форме она больше не выбрана.
-                    form = if (it.form.categoryId == target.id) {
+                    form = if (it.form?.categoryId == target.id) {
                         it.form.copy(categoryId = null)
                     } else {
                         it.form
@@ -278,11 +294,13 @@ class ExpensesViewModel @Inject constructor(
     }
 
     fun onWalletSelect(walletId: Long?) {
-        localState.update { it.copy(form = it.form.copy(walletId = walletId, walletErrorRes = null)) }
+        localState.update { state ->
+            state.copy(form = state.form?.copy(walletId = walletId, walletErrorRes = null))
+        }
     }
 
     fun onSave() {
-        val form = localState.value.form
+        val form = localState.value.form ?: return
 
         val amount = MoneyFormatter.parseToKopecks(form.amountInput)
 
@@ -309,11 +327,13 @@ class ExpensesViewModel @Inject constructor(
 
             if (form.id == null) {
                 transactionRepository.insertTransaction(transaction)
+                localState.update {
+                    it.copy(form = null, messageRes = R.string.expense_saved)
+                }
             } else {
                 transactionRepository.updateTransaction(transaction)
+                localState.update { it.copy(form = null) }
             }
-
-            localState.update { it.copy(form = ExpenseFormState()) }
         }
     }
 
@@ -356,7 +376,7 @@ class ExpensesViewModel @Inject constructor(
     }
 
     fun onCancelEdit() {
-        localState.update { it.copy(form = ExpenseFormState()) }
+        localState.update { it.copy(form = null) }
     }
 
     // --- Разовые сообщения ---
@@ -381,7 +401,8 @@ class ExpensesViewModel @Inject constructor(
 
 /** Часть состояния, которой управляет только сам экран. */
 private data class ExpensesLocalState(
-    val form: ExpenseFormState = ExpenseFormState(),
+    /** null — диалог формы закрыт. */
+    val form: ExpenseFormState? = null,
     val deleteTargetId: Long? = null,
     val isCategoryDialogVisible: Boolean = false,
     val newCategory: NewCategoryState = NewCategoryState(),

@@ -118,6 +118,9 @@
     <string name="category_delete_message_unused">Категория «%1$s» не используется ни в одной операции.</string>
     <string name="category_delete_message_used">Категория «%1$s». Операций с ней: %2$d. После удаления операции останутся, но потеряют категорию.</string>
     <string name="category_deleted">Категория удалена</string>
+    <string name="expense_add">Добавить расход</string>
+    <string name="expense_new_title">Новый расход</string>
+    <string name="expense_saved">Расход добавлен</string>
     <string name="expense_wallet">Кошелёк</string>
     <string name="expense_wallet_none">Не выбран</string>
     <string name="expense_save">Сохранить</string>
