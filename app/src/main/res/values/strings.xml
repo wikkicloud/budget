@@ -102,7 +102,6 @@
     <string name="savings_operation_delete_message">Операция на %1$s по копилке «%2$s» будет удалена.</string>
 
     <!-- Расходы -->
-    <string name="expense_title">Расход</string>
     <string name="expense_amount">Сумма</string>
     <string name="expense_description">Описание</string>
     <string name="expense_category">Категория</string>
@@ -135,9 +134,11 @@
     <string name="expense_no_description">Без описания</string>
 
     <!-- Приходы -->
-    <string name="income_title">Доход</string>
     <string name="income_amount">Сумма</string>
     <string name="income_description">Описание</string>
+    <string name="income_add">Добавить доход</string>
+    <string name="income_new_title">Новый доход</string>
+    <string name="income_edit_title">Редактировать доход</string>
     <string name="income_wallet">Кошелёк</string>
     <string name="income_wallet_none">Не выбран</string>
     <string name="income_save">Сохранить</string>

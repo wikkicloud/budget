@@ -15,18 +15,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -67,30 +70,41 @@ fun IncomeScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = stringResource(R.string.screen_income),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-        )
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        floatingActionButton = {
+            FloatingActionButton(onClick = viewModel::onAddClick) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = stringResource(R.string.income_add)
+                )
+            }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { contentPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding)
+        ) {
+            Text(
+                text = stringResource(R.string.screen_income),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            )
 
-        Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                // Нижний отступ — чтобы список не уходил под кнопку «+»
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 4.dp,
+                    bottom = 88.dp
+                ),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item {
-                    IncomeFormCard(
-                        state = state,
-                        onAmountChange = viewModel::onAmountChange,
-                        onDescriptionChange = viewModel::onDescriptionChange,
-                        onWalletSelect = viewModel::onWalletSelect,
-                        onSave = viewModel::onSave
-                    )
-                }
-
                 item {
                     Text(
                         text = stringResource(R.string.incomes_recent),
@@ -111,17 +125,25 @@ fun IncomeScreen(
                     items(state.incomes, key = { it.id }) { income ->
                         IncomeRow(
                             income = income,
+                            onEditClick = { viewModel.onEditClick(income) },
                             onDeleteClick = { viewModel.onDeleteClick(income) }
                         )
                     }
                 }
             }
-
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
         }
+    }
+
+    state.form?.let { form ->
+        IncomeFormDialog(
+            form = form,
+            wallets = state.wallets,
+            onAmountChange = viewModel::onAmountChange,
+            onDescriptionChange = viewModel::onDescriptionChange,
+            onWalletSelect = viewModel::onWalletSelect,
+            onSave = viewModel::onSave,
+            onDismiss = viewModel::onFormDismiss
+        )
     }
 
     state.deleteTarget?.let { income ->
@@ -133,65 +155,70 @@ fun IncomeScreen(
     }
 }
 
+/** Диалог добавления / редактирования дохода — открывается кнопкой «+» или из строки списка. */
 @Composable
-private fun IncomeFormCard(
-    state: IncomeUiState,
+private fun IncomeFormDialog(
+    form: IncomeFormState,
+    wallets: List<WalletEntity>,
     onAmountChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onWalletSelect: (Long?) -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    onDismiss: () -> Unit
 ) {
-    val form = state.form
-
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
             Text(
-                text = stringResource(R.string.income_title),
-                style = MaterialTheme.typography.titleMedium
+                stringResource(
+                    if (form.isEditing) R.string.income_edit_title else R.string.income_new_title
+                )
             )
+        },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = form.amountInput,
+                    onValueChange = onAmountChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.income_amount)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = form.amountErrorRes != null,
+                    supportingText = form.amountErrorRes?.let { { Text(stringResource(it)) } }
+                )
 
-            Spacer(modifier = Modifier.size(12.dp))
+                Spacer(modifier = Modifier.size(8.dp))
 
-            OutlinedTextField(
-                value = form.amountInput,
-                onValueChange = onAmountChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.income_amount)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                isError = form.amountErrorRes != null,
-                supportingText = form.amountErrorRes?.let { { Text(stringResource(it)) } }
-            )
+                WalletDropdown(
+                    selectedId = form.walletId,
+                    wallets = wallets,
+                    errorRes = form.walletErrorRes,
+                    onSelect = onWalletSelect
+                )
 
-            Spacer(modifier = Modifier.size(8.dp))
+                Spacer(modifier = Modifier.size(8.dp))
 
-            WalletDropdown(
-                selectedId = form.walletId,
-                wallets = state.wallets,
-                errorRes = form.walletErrorRes,
-                onSelect = onWalletSelect
-            )
-
-            Spacer(modifier = Modifier.size(8.dp))
-
-            OutlinedTextField(
-                value = form.description,
-                onValueChange = onDescriptionChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.income_description)) },
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.size(16.dp))
-
-            Button(
-                onClick = onSave,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+                OutlinedTextField(
+                    value = form.description,
+                    onValueChange = onDescriptionChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.income_description)) },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSave) {
                 Text(stringResource(R.string.income_save))
             }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
         }
-    }
+    )
 }
 
 @Composable
@@ -253,6 +280,7 @@ private fun WalletDropdown(
 @Composable
 private fun IncomeRow(
     income: IncomeUi,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -284,6 +312,13 @@ private fun IncomeRow(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
+
+            IconButton(onClick = onEditClick) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = stringResource(R.string.action_edit)
+                )
+            }
 
             IconButton(onClick = onDeleteClick) {
                 Icon(

@@ -32,24 +32,29 @@ data class IncomeUi(
     val walletName: String
 )
 
-/** Состояние формы добавления прихода. */
+/** Состояние формы добавления / редактирования прихода. */
 data class IncomeFormState(
+    /** null — создание нового прихода. */
+    val id: Long? = null,
     val amountInput: String = "",
     val description: String = "",
     /** null — кошелёк не выбран. */
     val walletId: Long? = null,
-    /** Дата операции, timestamp. */
+    /** Дата операции, timestamp. Для нового прихода — сейчас. */
     val date: Long = System.currentTimeMillis(),
     @StringRes val amountErrorRes: Int? = null,
     @StringRes val walletErrorRes: Int? = null
-)
+) {
+    val isEditing: Boolean get() = id != null
+}
 
 /** Единственное состояние экрана «Приход». */
 data class IncomeUiState(
     val incomes: List<IncomeUi> = emptyList(),
     val wallets: List<WalletEntity> = emptyList(),
     val isLoading: Boolean = true,
-    val form: IncomeFormState = IncomeFormState(),
+    /** Открытый диалог добавления или редактирования прихода; null — диалог закрыт. */
+    val form: IncomeFormState? = null,
     /** Приход, для которого открыт диалог подтверждения удаления. */
     val deleteTarget: IncomeUi? = null,
     /** Разовое сообщение для Snackbar. */
@@ -87,20 +92,36 @@ class IncomeViewModel @Inject constructor(
 
     // --- Форма ---
 
+    /** Кнопка «+»: диалог добавления с пустыми полями. */
+    fun onAddClick() {
+        localState.update { it.copy(form = IncomeFormState()) }
+    }
+
+    /** Закрыть диалог без сохранения. */
+    fun onFormDismiss() {
+        localState.update { it.copy(form = null) }
+    }
+
     fun onAmountChange(input: String) {
-        localState.update { it.copy(form = it.form.copy(amountInput = input, amountErrorRes = null)) }
+        localState.update { state ->
+            state.copy(form = state.form?.copy(amountInput = input, amountErrorRes = null))
+        }
     }
 
     fun onDescriptionChange(input: String) {
-        localState.update { it.copy(form = it.form.copy(description = input)) }
+        localState.update { state ->
+            state.copy(form = state.form?.copy(description = input))
+        }
     }
 
     fun onWalletSelect(walletId: Long?) {
-        localState.update { it.copy(form = it.form.copy(walletId = walletId, walletErrorRes = null)) }
+        localState.update { state ->
+            state.copy(form = state.form?.copy(walletId = walletId, walletErrorRes = null))
+        }
     }
 
     fun onSave() {
-        val form = localState.value.form
+        val form = localState.value.form ?: return
 
         val amount = MoneyFormatter.parseToKopecks(form.amountInput)
 
@@ -115,20 +136,41 @@ class IncomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            transactionRepository.insertTransaction(
-                TransactionEntity(
-                    type = TransactionType.INCOME.name,
-                    amount = amount,
-                    description = form.description.trim(),
-                    categoryId = null,
-                    walletId = form.walletId!!,
-                    date = form.date
-                )
+            val transaction = TransactionEntity(
+                id = form.id ?: 0,
+                type = TransactionType.INCOME.name,
+                amount = amount,
+                description = form.description.trim(),
+                categoryId = null,
+                walletId = form.walletId!!,
+                date = form.date
             )
 
-            localState.update {
-                it.copy(form = IncomeFormState(), messageRes = R.string.income_saved)
+            if (form.id == null) {
+                transactionRepository.insertTransaction(transaction)
+                localState.update {
+                    it.copy(form = null, messageRes = R.string.income_saved)
+                }
+            } else {
+                transactionRepository.updateTransaction(transaction)
+                localState.update { it.copy(form = null) }
             }
+        }
+    }
+
+    // --- Редактирование ---
+
+    fun onEditClick(income: IncomeUi) {
+        localState.update {
+            it.copy(
+                form = IncomeFormState(
+                    id = income.id,
+                    amountInput = MoneyFormatter.formatPlain(income.amount),
+                    description = income.description,
+                    walletId = income.walletId,
+                    date = income.date
+                )
+            )
         }
     }
 
@@ -171,7 +213,8 @@ class IncomeViewModel @Inject constructor(
 
 /** Часть состояния, которой управляет только сам экран. */
 private data class IncomeLocalState(
-    val form: IncomeFormState = IncomeFormState(),
+    /** null — диалог формы закрыт. */
+    val form: IncomeFormState? = null,
     val deleteTargetId: Long? = null,
     @StringRes val messageRes: Int? = null
 )
