@@ -11,19 +11,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowCircleDown
 import androidx.compose.material.icons.filled.ArrowCircleUp
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.AlertDialog
@@ -77,6 +81,7 @@ fun SavingsScreen(
     val messageText = when (state.message) {
         null -> null
         Message.SavingsCreated -> resources.getString(R.string.savings_created)
+        Message.SavingsUpdated -> resources.getString(R.string.savings_updated)
         Message.SavingsDeleted -> resources.getString(R.string.savings_deleted)
     }
 
@@ -137,6 +142,7 @@ fun SavingsScreen(
                             onDepositClick = { viewModel.onDepositClick(savings) },
                             onWithdrawClick = { viewModel.onWithdrawClick(savings) },
                             onInterestClick = { viewModel.onInterestClick(savings) },
+                            onEditClick = { viewModel.onEditClick(savings) },
                             onDeleteClick = { viewModel.onDeleteClick(savings) }
                         )
                     }
@@ -175,6 +181,7 @@ fun SavingsScreen(
             form = form,
             onNameChange = viewModel::onFormNameChange,
             onTargetChange = viewModel::onFormTargetChange,
+            onInitialChange = viewModel::onFormInitialChange,
             onSave = viewModel::onFormSave,
             onDismiss = viewModel::onFormDismiss
         )
@@ -241,6 +248,7 @@ private fun SavingsCard(
     onDepositClick: () -> Unit,
     onWithdrawClick: () -> Unit,
     onInterestClick: () -> Unit,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -276,12 +284,32 @@ private fun SavingsCard(
                     fontWeight = FontWeight.Bold
                 )
 
+                IconButton(onClick = onEditClick) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = stringResource(R.string.savings_edit)
+                    )
+                }
+
                 IconButton(onClick = onDeleteClick) {
                     Icon(
                         imageVector = Icons.Filled.Delete,
                         contentDescription = stringResource(R.string.action_delete)
                     )
                 }
+            }
+
+            // Стартовая сумма показывается, только если она есть — у пустых копилок строки нет
+            if (savings.initialAmount > 0) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(
+                        R.string.savings_initial_amount,
+                        MoneyFormatter.format(savings.initialAmount)
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             val percent = savings.progressPercent
@@ -461,20 +489,35 @@ private fun EmptyState(modifier: Modifier = Modifier) {
     }
 }
 
-/** Диалог создания копилки: название и необязательная цель. Дата создания ставится автоматически. */
+/**
+ * Диалог создания и редактирования копилки: название, необязательная цель
+ * и необязательная стартовая сумма. Дата создания ставится при создании и при правке не меняется.
+ */
 @Composable
 private fun SavingsFormDialog(
     form: SavingsFormState,
     onNameChange: (String) -> Unit,
     onTargetChange: (String) -> Unit,
+    onInitialChange: (String) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.savings_new_title)) },
+        title = {
+            Text(
+                stringResource(
+                    if (form.isEditing) R.string.savings_edit_title else R.string.savings_new_title
+                )
+            )
+        },
         text = {
-            Column {
+            // Три поля с подсказками не влезают в диалог на узком экране — прокручиваем
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 OutlinedTextField(
                     value = form.name,
                     onValueChange = onNameChange,
@@ -483,6 +526,33 @@ private fun SavingsFormDialog(
                     singleLine = true,
                     isError = form.nameErrorRes != null,
                     supportingText = form.nameErrorRes?.let { { Text(stringResource(it)) } }
+                )
+
+                Spacer(modifier = Modifier.size(16.dp))
+
+                OutlinedTextField(
+                    // Стартовая сумма: деньги, уже лежащие в копилке; кошельки не меняются
+                    value = form.initialInput,
+                    onValueChange = onInitialChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.savings_initial)) },
+                    placeholder = { Text(stringResource(R.string.savings_target_optional)) },
+                    suffix = { Text(MoneyFormatter.CURRENCY) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = form.initialErrorRes != null,
+                    supportingText = {
+                        Text(
+                            text = stringResource(
+                                form.initialErrorRes ?: R.string.savings_initial_hint
+                            ),
+                            color = if (form.initialErrorRes != null) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
                 )
 
                 Spacer(modifier = Modifier.size(16.dp))

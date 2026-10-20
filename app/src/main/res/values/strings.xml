@@ -60,9 +60,14 @@
     <!-- Копилки -->
     <string name="savings_add">Добавить копилку</string>
     <string name="savings_new_title">Новая копилка</string>
+    <string name="savings_edit_title">Редактировать копилку</string>
+    <string name="savings_edit">Редактировать</string>
     <string name="savings_name">Название</string>
     <string name="savings_target">Цель</string>
     <string name="savings_target_optional">Необязательно</string>
+    <string name="savings_initial">Стартовая сумма</string>
+    <string name="savings_initial_hint">Деньги, которые уже лежат в копилке. Кошельки не меняются.</string>
+    <string name="savings_initial_amount">Стартовая сумма: %1$s</string>
     <string name="savings_created_at">Создана %1$s</string>
     <string name="savings_total">Всего в копилках</string>
     <string name="savings_empty">Копилок пока нет</string>
@@ -72,6 +77,7 @@
     <string name="savings_no_goal">Без цели</string>
     <string name="savings_error_name">Введите название копилки</string>
     <string name="savings_error_target">Введите сумму цели больше нуля</string>
+    <string name="savings_error_initial">Введите стартовую сумму числом</string>
     <string name="savings_deposit">Пополнить</string>
     <string name="savings_withdraw">Вывести</string>
     <string name="savings_interest">Начислить проценты</string>
@@ -89,6 +95,7 @@
     <string name="savings_error_not_enough">Недостаточно средств на кошельке</string>
     <string name="savings_error_not_enough_savings">В копилке нет такой суммы</string>
     <string name="savings_created">Копилка создана</string>
+    <string name="savings_updated">Изменения сохранены</string>
     <string name="savings_deleted">Копилка удалена</string>
     <string name="savings_delete_title">Удалить копилку?</string>
     <string name="savings_delete_message">Копилка «%1$s» со всеми операциями (%2$d) будет удалена. Деньги вернутся в кошельки только через вывод из копилки.</string>

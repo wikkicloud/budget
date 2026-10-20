@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.budget.app.data.local.entity.SavingsEntity
 import com.budget.app.data.local.entity.SavingsOperationEntity
 import com.budget.app.data.local.model.SavingsOperationWithDetails
@@ -14,13 +15,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SavingsDao {
     /**
-     * Копилки вместе с балансом: пополнения − выводы + проценты.
+     * Копилки вместе с балансом: стартовая сумма + пополнения − выводы + проценты.
      * Баланс не хранится в таблице, а считается здесь же.
      */
     @Query(
         """
-        SELECT s.id, s.name, s.createdAt, s.targetAmount,
-            COALESCE((SELECT SUM(o.amount) FROM savings_operations o
+        SELECT s.id, s.name, s.createdAt, s.targetAmount, s.initialAmount,
+            s.initialAmount
+            + COALESCE((SELECT SUM(o.amount) FROM savings_operations o
                 WHERE o.savingsId = s.id AND o.type = 'DEPOSIT'), 0)
             - COALESCE((SELECT SUM(o.amount) FROM savings_operations o
                 WHERE o.savingsId = s.id AND o.type = 'WITHDRAW'), 0)
@@ -38,6 +40,9 @@ interface SavingsDao {
 
     @Insert
     suspend fun insertSavings(savings: SavingsEntity): Long
+
+    @Update
+    suspend fun updateSavings(savings: SavingsEntity)
 
     @Query("DELETE FROM savings WHERE id = :id")
     suspend fun deleteSavingsById(id: Long)

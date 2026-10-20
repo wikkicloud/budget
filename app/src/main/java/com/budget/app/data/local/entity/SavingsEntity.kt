@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 /**
  * Копилка. Баланс хранится не здесь, а считается запросом по [SavingsOperationEntity]:
- * пополнения минус выводы плюс проценты.
+ * стартовая сумма плюс пополнения минус выводы плюс проценты.
  */
 @Entity(tableName = "savings")
 data class SavingsEntity(
@@ -13,5 +13,10 @@ data class SavingsEntity(
     val name: String,
     val createdAt: Long, // timestamp создания
     /** Цель в копейках; null — копилка без цели. */
-    val targetAmount: Long? = null
+    val targetAmount: Long? = null,
+    /**
+     * Стартовая сумма в копейках — деньги, которые уже лежат в копилке при её создании.
+     * Кошельков не касается (как `initialBalance` у кошелька) и в доходах аналитики не участвует.
+     */
+    val initialAmount: Long = 0
 )

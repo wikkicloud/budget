@@ -22,6 +22,9 @@ class SavingsRepository @Inject constructor(
 
     suspend fun insertSavings(savings: SavingsEntity): Long = savingsDao.insertSavings(savings)
 
+    /** Меняет название, цель или стартовую сумму существующей копилки. */
+    suspend fun updateSavings(savings: SavingsEntity) = savingsDao.updateSavings(savings)
+
     /** Удаляет копилку вместе с её операциями (внешний ключ с CASCADE). */
     suspend fun deleteSavingsById(id: Long) = savingsDao.deleteSavingsById(id)
 

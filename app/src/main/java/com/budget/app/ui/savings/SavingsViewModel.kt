@@ -31,6 +31,8 @@ data class SavingsUi(
     val createdAt: Long,
     /** Цель в копейках; null — копилка без цели. */
     val targetAmount: Long?,
+    /** Стартовая сумма в копейках. */
+    val initialAmount: Long,
     /** Баланс в копейках. */
     val balance: Long
 ) {
@@ -53,14 +55,22 @@ data class SavingsOperationUi(
     val walletName: String?
 )
 
-/** Состояние диалога создания копилки. */
+/** Состояние диалога создания или редактирования копилки. */
 data class SavingsFormState(
+    /** null — создание, иначе — редактирование копилки с этим id. */
+    val id: Long? = null,
     val name: String = "",
     /** Цель в виде введённой суммы («1 000 000,50»); пусто — копилка без цели. */
     val targetInput: String = "",
+    /** Стартовая сумма в виде введённой суммы; пусто — ноль. */
+    val initialInput: String = "",
     @StringRes val nameErrorRes: Int? = null,
-    @StringRes val targetErrorRes: Int? = null
-)
+    @StringRes val targetErrorRes: Int? = null,
+    @StringRes val initialErrorRes: Int? = null
+) {
+    /** true — правим существующую копилку, false — создаём новую. */
+    val isEditing: Boolean get() = id != null
+}
 
 /** Действие с копилкой, для которого открыт диалог: пополнение, вывод или проценты. */
 enum class SavingsActionKind { DEPOSIT, WITHDRAW, INTEREST }
@@ -81,6 +91,9 @@ data class SavingsActionState(
 sealed interface Message {
     /** Копилка создана. */
     data object SavingsCreated : Message
+
+    /** Изменения копилки сохранены. */
+    data object SavingsUpdated : Message
 
     /** Копилка удалена вместе с операциями. */
     data object SavingsDeleted : Message
@@ -155,10 +168,32 @@ class SavingsViewModel @Inject constructor(
         initialValue = SavingsUiState()
     )
 
-    // --- Создание копилки ---
+    // --- Создание и редактирование копилки ---
 
     fun onAddClick() {
         localState.update { it.copy(form = SavingsFormState()) }
+    }
+
+    /** Открывает диалог с данными существующей копилки. */
+    fun onEditClick(savings: SavingsUi) {
+        localState.update {
+            it.copy(
+                form = SavingsFormState(
+                    id = savings.id,
+                    name = savings.name,
+                    // Цель и стартовая сумма показываются так же, как вводятся: с разрядами
+                    targetInput = savings.targetAmount?.let { target ->
+                        MoneyFormatter.groupAmountInput(MoneyFormatter.formatPlain(target))
+                    }.orEmpty(),
+                    initialInput = savings.initialAmount
+                        .takeIf { it > 0 }
+                        ?.let { amount ->
+                            MoneyFormatter.groupAmountInput(MoneyFormatter.formatPlain(amount))
+                        }
+                        .orEmpty()
+                )
+            )
+        }
     }
 
     fun onFormDismiss() {
@@ -179,36 +214,73 @@ class SavingsViewModel @Inject constructor(
         }
     }
 
+    fun onFormInitialChange(input: String) {
+        // Стартовая сумма — тоже сумма: разряды разделяются при наборе
+        val filtered = MoneyFormatter.groupAmountInput(input)
+        localState.update { state ->
+            state.copy(form = state.form?.copy(initialInput = filtered, initialErrorRes = null))
+        }
+    }
+
     fun onFormSave() {
         val form = localState.value.form ?: return
 
         val name = form.name.trim()
         // Цель необязательна: пустое поле — копилка без цели
         val target = if (form.targetInput.isBlank()) null else MoneyFormatter.parseToKopecks(form.targetInput)
+        // Стартовая сумма необязательна: пустое поле — ноль
+        val initial = if (form.initialInput.isBlank()) 0L else MoneyFormatter.parseToKopecks(form.initialInput)
 
         val nameError = R.string.savings_error_name.takeIf { name.isEmpty() }
         val targetError = R.string.savings_error_target.takeIf {
             form.targetInput.isNotBlank() && (target == null || target <= 0)
         }
+        // Ноль допустим (пустая копилка), отрицательных сумм не бывает — минус отбрасывает сам фильтр ввода
+        val initialError = R.string.savings_error_initial.takeIf {
+            form.initialInput.isNotBlank() && initial == null
+        }
 
-        if (nameError != null || targetError != null) {
+        if (nameError != null || targetError != null || initialError != null || initial == null) {
             localState.update {
-                it.copy(form = form.copy(nameErrorRes = nameError, targetErrorRes = targetError))
+                it.copy(
+                    form = form.copy(
+                        nameErrorRes = nameError,
+                        targetErrorRes = targetError,
+                        initialErrorRes = initialError
+                    )
+                )
             }
             return
         }
 
         viewModelScope.launch {
-            savingsRepository.insertSavings(
-                SavingsEntity(
-                    name = name,
-                    // Дата создания ставится автоматически
-                    createdAt = System.currentTimeMillis(),
-                    targetAmount = target
+            if (form.id == null) {
+                savingsRepository.insertSavings(
+                    SavingsEntity(
+                        name = name,
+                        // Дата создания ставится автоматически
+                        createdAt = System.currentTimeMillis(),
+                        targetAmount = target,
+                        initialAmount = initial
+                    )
                 )
-            )
 
-            localState.update { it.copy(form = null, message = Message.SavingsCreated) }
+                localState.update { it.copy(form = null, message = Message.SavingsCreated) }
+            } else {
+                // Дата создания при редактировании не меняется — берём её из сохранённой копилки
+                val existing = savingsRepository.getSavingsById(form.id)
+                savingsRepository.updateSavings(
+                    SavingsEntity(
+                        id = form.id,
+                        name = name,
+                        createdAt = existing?.createdAt ?: System.currentTimeMillis(),
+                        targetAmount = target,
+                        initialAmount = initial
+                    )
+                )
+
+                localState.update { it.copy(form = null, message = Message.SavingsUpdated) }
+            }
         }
     }
 
@@ -381,6 +453,7 @@ class SavingsViewModel @Inject constructor(
         name = name,
         createdAt = createdAt,
         targetAmount = targetAmount,
+        initialAmount = initialAmount,
         balance = balance
     )
 
