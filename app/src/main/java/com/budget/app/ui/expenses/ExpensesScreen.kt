@@ -191,7 +191,9 @@ fun ExpensesScreen(
         }
     }
 
-    state.form?.let { form ->
+    // Диалог категории показывается вместо формы, а не поверх неё: два окна друг над другом
+    // работают не на всех версиях Android. Состояние формы при этом сохраняется.
+    if (!state.isCategoryDialogVisible) state.form?.let { form ->
         ExpenseFormDialog(
             state = state,
             form = form,
