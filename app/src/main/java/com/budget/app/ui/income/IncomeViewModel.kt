@@ -114,6 +114,13 @@ class IncomeViewModel @Inject constructor(
         }
     }
 
+    /** Выбрана дата в календаре — начало выбранного дня. */
+    fun onDateChange(date: Long) {
+        localState.update { state ->
+            state.copy(form = state.form?.copy(date = date))
+        }
+    }
+
     fun onWalletSelect(walletId: Long?) {
         localState.update { state ->
             state.copy(form = state.form?.copy(walletId = walletId, walletErrorRes = null))

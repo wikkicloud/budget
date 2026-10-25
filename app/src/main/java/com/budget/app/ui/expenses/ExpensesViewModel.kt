@@ -158,6 +158,13 @@ class ExpensesViewModel @Inject constructor(
         }
     }
 
+    /** Выбрана дата в календаре — начало выбранного дня. */
+    fun onDateChange(date: Long) {
+        localState.update { state ->
+            state.copy(form = state.form?.copy(date = date))
+        }
+    }
+
     /**
      * Выбрана подсказка описания: подставляем описание, а также категорию и кошелёк последнего
      * расхода с таким названием. Сумма подставляется только в пустое поле. Всё можно изменить.

@@ -76,6 +76,7 @@ import com.budget.app.util.categoryIconVector
 import com.budget.app.util.ColorFormatter
 import com.budget.app.util.DateFormatter
 import com.budget.app.util.MoneyFormatter
+import com.budget.app.ui.components.DateField
 
 /** Цвет иконки по умолчанию, если у категории цвет не задан или не разобран. */
 private val DefaultCategoryIconColor = Color(0xFF9C7CFF)
@@ -199,6 +200,7 @@ fun ExpensesScreen(
             form = form,
             onAmountChange = viewModel::onAmountChange,
             onDescriptionChange = viewModel::onDescriptionChange,
+            onDateChange = viewModel::onDateChange,
             onSuggestionSelect = viewModel::onSuggestionSelect,
             onCategorySelect = viewModel::onCategorySelect,
             onAddCategoryClick = viewModel::onAddCategoryClick,
@@ -246,6 +248,7 @@ private fun ExpenseFormDialog(
     form: ExpenseFormState,
     onAmountChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
+    onDateChange: (Long) -> Unit,
     onSuggestionSelect: (ExpenseSuggestion) -> Unit,
     onCategorySelect: (Long?) -> Unit,
     onAddCategoryClick: () -> Unit,
@@ -326,6 +329,13 @@ private fun ExpenseFormDialog(
                     wallets = state.wallets,
                     errorRes = form.walletErrorRes,
                     onSelect = onWalletSelect
+                )
+
+                Spacer(modifier = Modifier.size(8.dp))
+
+                DateField(
+                    date = form.date,
+                    onDateChange = onDateChange
                 )
             }
         },

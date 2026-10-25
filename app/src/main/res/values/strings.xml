@@ -203,6 +203,10 @@
     <string name="month_nov">ноя</string>
     <string name="month_dec">дек</string>
 
+    <!-- Дата -->
+    <string name="date_title">Выберите дату</string>
+    <string name="date_ok">ОК</string>
+
     <!-- Общие действия -->
     <string name="action_save">Сохранить</string>
     <string name="action_cancel">Отмена</string>

@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -54,6 +57,7 @@ import com.budget.app.data.local.entity.WalletEntity
 import com.budget.app.domain.model.WalletType
 import com.budget.app.util.DateFormatter
 import com.budget.app.util.MoneyFormatter
+import com.budget.app.ui.components.DateField
 
 @Composable
 fun IncomeScreen(
@@ -140,6 +144,7 @@ fun IncomeScreen(
             wallets = state.wallets,
             onAmountChange = viewModel::onAmountChange,
             onDescriptionChange = viewModel::onDescriptionChange,
+            onDateChange = viewModel::onDateChange,
             onWalletSelect = viewModel::onWalletSelect,
             onSave = viewModel::onSave,
             onDismiss = viewModel::onFormDismiss
@@ -162,6 +167,7 @@ private fun IncomeFormDialog(
     wallets: List<WalletEntity>,
     onAmountChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
+    onDateChange: (Long) -> Unit,
     onWalletSelect: (Long?) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit
@@ -176,7 +182,11 @@ private fun IncomeFormDialog(
             )
         },
         text = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 480.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 OutlinedTextField(
                     value = form.amountInput,
                     onValueChange = onAmountChange,
@@ -205,6 +215,13 @@ private fun IncomeFormDialog(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(stringResource(R.string.income_description)) },
                     singleLine = true
+                )
+
+                Spacer(modifier = Modifier.size(8.dp))
+
+                DateField(
+                    date = form.date,
+                    onDateChange = onDateChange
                 )
             }
         },
