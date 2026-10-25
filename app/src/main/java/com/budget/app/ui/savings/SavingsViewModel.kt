@@ -108,6 +108,8 @@ data class SavingsUiState(
     val operations: List<SavingsOperationUi> = emptyList(),
     /** Итого во всех копилках в копейках. */
     val total: Long = 0,
+    /** Копилка, раскрытая тапом: видны прогресс, стартовая сумма и кнопки действий. */
+    val expandedId: Long? = null,
     val isLoading: Boolean = true,
     val form: SavingsFormState? = null,
     val action: SavingsActionState? = null,
@@ -152,6 +154,8 @@ class SavingsViewModel @Inject constructor(
             wallets = mappedWallets,
             operations = mappedOperations.take(MAX_VISIBLE_OPERATIONS),
             total = mapped.sumOf { it.balance },
+            // Раскрытая копилка могла быть удалена — тогда панель закрывается сама
+            expandedId = local.expandedId?.takeIf { id -> mapped.any { it.id == id } },
             isLoading = false,
             form = local.form,
             action = local.action,
@@ -167,6 +171,15 @@ class SavingsViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = SavingsUiState()
     )
+
+    // --- Раскрытие копилки ---
+
+    /** Тап по копилке раскрывает детали и действия; повторный тап сворачивает. */
+    fun onSavingsToggle(savings: SavingsUi) {
+        localState.update {
+            it.copy(expandedId = if (it.expandedId == savings.id) null else savings.id)
+        }
+    }
 
     // --- Создание и редактирование копилки ---
 
@@ -475,6 +488,8 @@ class SavingsViewModel @Inject constructor(
 
 /** Часть состояния, которой управляет только сам экран. */
 private data class SavingsLocalState(
+    /** id раскрытой копилки; одновременно раскрыта только одна. */
+    val expandedId: Long? = null,
     val form: SavingsFormState? = null,
     val action: SavingsActionState? = null,
     val deleteSavingsId: Long? = null,

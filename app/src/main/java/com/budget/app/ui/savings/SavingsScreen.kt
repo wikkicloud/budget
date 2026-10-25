@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.ArrowCircleUp
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.AlertDialog
@@ -139,6 +141,8 @@ fun SavingsScreen(
                     items(state.savings, key = { it.id }) { savings ->
                         SavingsCard(
                             savings = savings,
+                            expanded = state.expandedId == savings.id,
+                            onToggle = { viewModel.onSavingsToggle(savings) },
                             onDepositClick = { viewModel.onDepositClick(savings) },
                             onWithdrawClick = { viewModel.onWithdrawClick(savings) },
                             onInterestClick = { viewModel.onInterestClick(savings) },
@@ -241,10 +245,16 @@ private fun TotalCard(total: Long, modifier: Modifier = Modifier) {
     }
 }
 
-/** Копилка: баланс, цель с прогрессом и кнопки действий. */
+/**
+ * Копилка: компактная строка как на экране «Кошельки» (иконка, название, цель, баланс),
+ * тап раскрывает детали и кнопки действий — дата, стартовая сумма, прогресс,
+ * «Пополнить» / «Вывести» / «Проценты» / «Редактировать» / «Удалить».
+ */
 @Composable
 private fun SavingsCard(
     savings: SavingsUi,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     onDepositClick: () -> Unit,
     onWithdrawClick: () -> Unit,
     onInterestClick: () -> Unit,
@@ -252,9 +262,17 @@ private fun SavingsCard(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onToggle
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Savings,
                     contentDescription = null,
@@ -269,10 +287,10 @@ private fun SavingsCard(
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        text = stringResource(
-                            R.string.savings_created_at,
-                            DateFormatter.formatDate(savings.createdAt)
-                        ),
+                        // Цель одной строкой — как тип кошелька на «Кошельках»
+                        text = savings.targetAmount?.let {
+                            stringResource(R.string.savings_goal, MoneyFormatter.format(it))
+                        } ?: stringResource(R.string.savings_no_goal),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -284,101 +302,149 @@ private fun SavingsCard(
                     fontWeight = FontWeight.Bold
                 )
 
-                IconButton(onClick = onEditClick) {
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = stringResource(R.string.savings_edit)
-                    )
-                }
-
-                IconButton(onClick = onDeleteClick) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.action_delete)
-                    )
-                }
-            }
-
-            // Стартовая сумма показывается, только если она есть — у пустых копилок строки нет
-            if (savings.initialAmount > 0) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(
-                        R.string.savings_initial_amount,
-                        MoneyFormatter.format(savings.initialAmount)
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                Icon(
+                    imageVector = if (expanded) {
+                        Icons.Filled.ExpandLess
+                    } else {
+                        Icons.Filled.ExpandMore
+                    },
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            val percent = savings.progressPercent
-            val target = savings.targetAmount
-
-            if (target != null && percent != null) {
-                Spacer(modifier = Modifier.height(10.dp))
-
-                LinearProgressIndicator(
-                    progress = { savings.progress ?: 0f },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp))
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = stringResource(R.string.savings_goal, MoneyFormatter.format(target)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        text = stringResource(R.string.savings_progress, percent),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            } else {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.savings_no_goal),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            if (expanded) {
+                SavingsDetails(
+                    savings = savings,
+                    onDepositClick = onDepositClick,
+                    onWithdrawClick = onWithdrawClick,
+                    onInterestClick = onInterestClick,
+                    onEditClick = onEditClick,
+                    onDeleteClick = onDeleteClick
                 )
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(8.dp))
+/** Раскрытая часть копилки: дата, стартовая сумма, прогресс по цели и все действия. */
+@Composable
+private fun SavingsDetails(
+    savings: SavingsUi,
+    onDepositClick: () -> Unit,
+    onWithdrawClick: () -> Unit,
+    onInterestClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) {
+        Text(
+            text = stringResource(
+                R.string.savings_created_at,
+                DateFormatter.formatDate(savings.createdAt)
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
-            // Три кнопки в строку не поместились бы на узком экране — переносятся
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ActionButton(
-                    icon = Icons.Filled.ArrowCircleUp,
-                    labelRes = R.string.savings_deposit,
-                    contentDescriptionRes = R.string.savings_deposit,
-                    onClick = onDepositClick
-                )
-                ActionButton(
-                    icon = Icons.Filled.ArrowCircleDown,
-                    labelRes = R.string.savings_withdraw,
-                    contentDescriptionRes = R.string.savings_withdraw,
-                    onClick = onWithdrawClick
-                )
-                ActionButton(
-                    icon = Icons.Filled.Percent,
-                    // Короткая подпись: полная формулировка не влезает в кнопку
-                    labelRes = R.string.savings_interest_short,
-                    contentDescriptionRes = R.string.savings_interest,
-                    onClick = onInterestClick
-                )
-            }
+        // Стартовая сумма показывается, только если она есть — у пустых копилок строки нет
+        if (savings.initialAmount > 0) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(
+                    R.string.savings_initial_amount,
+                    MoneyFormatter.format(savings.initialAmount)
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        val percent = savings.progressPercent
+        val target = savings.targetAmount
+
+        if (target != null && percent != null) {
+            Spacer(modifier = Modifier.height(10.dp))
+
+            LinearProgressIndicator(
+                progress = { savings.progress ?: 0f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp))
+            )
 
             Spacer(modifier = Modifier.height(4.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = stringResource(R.string.savings_goal, MoneyFormatter.format(target)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = stringResource(R.string.savings_progress, percent),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Три кнопки в строку не поместились бы на узком экране — переносятся
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ActionButton(
+                icon = Icons.Filled.ArrowCircleUp,
+                labelRes = R.string.savings_deposit,
+                contentDescriptionRes = R.string.savings_deposit,
+                onClick = onDepositClick
+            )
+            ActionButton(
+                icon = Icons.Filled.ArrowCircleDown,
+                labelRes = R.string.savings_withdraw,
+                contentDescriptionRes = R.string.savings_withdraw,
+                onClick = onWithdrawClick
+            )
+            ActionButton(
+                icon = Icons.Filled.Percent,
+                // Короткая подпись: полная формулировка не влезает в кнопку
+                labelRes = R.string.savings_interest_short,
+                contentDescriptionRes = R.string.savings_interest,
+                onClick = onInterestClick
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(onClick = onEditClick) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(stringResource(R.string.savings_edit))
+            }
+
+            TextButton(onClick = onDeleteClick) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(stringResource(R.string.action_delete))
+            }
         }
     }
 }
