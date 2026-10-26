@@ -239,4 +239,80 @@ class MoneyFormatterTest {
             assertEquals(kopecks, MoneyFormatter.parseToKopecks(MoneyFormatter.formatPlain(kopecks)))
         }
     }
+
+    // --- mapCursorAfterGrouping ---
+
+    @Test
+    fun `mapCursorAfterGrouping keeps cursor at the end when typing adds a separator`() {
+        // Сценарий бага: ввод «1000» превращается в «1 000», курсор должен остаться в конце
+        assertEquals(
+            5,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "1000", rawCursor = 4, groupedInput = "1 000")
+        )
+        assertEquals(
+            9,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "1000000", rawCursor = 7, groupedInput = "1 000 000")
+        )
+    }
+
+    @Test
+    fun `mapCursorAfterGrouping keeps cursor where it was without separators`() {
+        assertEquals(
+            2,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "123", rawCursor = 2, groupedInput = "123")
+        )
+    }
+
+    @Test
+    fun `mapCursorAfterGrouping maps cursor in the middle of the number`() {
+        // Курсор после «12» в «1234» -> после «12» в «1 234» (позиция 3)
+        assertEquals(
+            3,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "1234", rawCursor = 2, groupedInput = "1 234")
+        )
+        // Курсор после «123» в «1234» -> после «123» в «1 234» (позиция 4)
+        assertEquals(
+            4,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "1234", rawCursor = 3, groupedInput = "1 234")
+        )
+    }
+
+    @Test
+    fun `mapCursorAfterGrouping ignores separator spaces in the raw input`() {
+        // Курсор в конце уже сгруппированного ввода остаётся в конце
+        assertEquals(
+            5,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "1 000", rawCursor = 5, groupedInput = "1 000")
+        )
+        // Курсор сразу после пробела-разделителя: перед ним один значимый символ — позиция 1
+        assertEquals(
+            1,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "1 000", rawCursor = 2, groupedInput = "1 000")
+        )
+    }
+
+    @Test
+    fun `mapCursorAfterGrouping handles kopecks and empty input`() {
+        assertEquals(
+            0,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "", rawCursor = 0, groupedInput = "")
+        )
+        // Курсор после запятой в «1234,5» -> после запятой в «1 234,5»
+        assertEquals(
+            6,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "1234,5", rawCursor = 5, groupedInput = "1 234,5")
+        )
+    }
+
+    @Test
+    fun `mapCursorAfterGrouping clamps out-of-range cursor`() {
+        assertEquals(
+            5,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "1000", rawCursor = 99, groupedInput = "1 000")
+        )
+        assertEquals(
+            0,
+            MoneyFormatter.mapCursorAfterGrouping(rawInput = "1000", rawCursor = -5, groupedInput = "1 000")
+        )
+    }
 }

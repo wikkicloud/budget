@@ -61,8 +61,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -596,46 +598,23 @@ private fun SavingsFormDialog(
 
                 Spacer(modifier = Modifier.size(16.dp))
 
-                OutlinedTextField(
-                    // Стартовая сумма: деньги, уже лежащие в копилке; кошельки не меняются
+                // Стартовая сумма: деньги, уже лежащие в копилке; кошельки не меняются
+                GroupedAmountField(
                     value = form.initialInput,
                     onValueChange = onInitialChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.savings_initial)) },
-                    placeholder = { Text(stringResource(R.string.savings_target_optional)) },
-                    suffix = { Text(MoneyFormatter.CURRENCY) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    isError = form.initialErrorRes != null,
-                    supportingText = {
-                        Text(
-                            text = stringResource(
-                                form.initialErrorRes ?: R.string.savings_initial_hint
-                            ),
-                            color = if (form.initialErrorRes != null) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
+                    labelRes = R.string.savings_initial,
+                    errorRes = form.initialErrorRes,
+                    hintRes = R.string.savings_initial_hint
                 )
 
                 Spacer(modifier = Modifier.size(16.dp))
 
-                OutlinedTextField(
-                    // Цель — сумма: разряды уже разделены в состоянии формы, пробелы разбирает parseToKopecks
+                // Цель — сумма: разряды уже разделены в состоянии формы, пробелы разбирает parseToKopecks
+                GroupedAmountField(
                     value = form.targetInput,
                     onValueChange = onTargetChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.savings_target)) },
-                    placeholder = { Text(stringResource(R.string.savings_target_optional)) },
-                    // Валюта, как в остальных суммах: цифры вводит пользователь
-                    suffix = { Text(MoneyFormatter.CURRENCY) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    isError = form.targetErrorRes != null,
-                    supportingText = form.targetErrorRes?.let { { Text(stringResource(it)) } }
+                    labelRes = R.string.savings_target,
+                    errorRes = form.targetErrorRes
                 )
             }
         },
@@ -648,6 +627,62 @@ private fun SavingsFormDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.action_cancel))
             }
+        }
+    )
+}
+
+/**
+ * Поле суммы, разделяющее разряды прямо при наборе («1000» → «1 000»).
+ * Значение держится как `TextFieldValue`, а позиция курсора пересчитывается после группировки:
+ * когда текст удлиняется разделителем, обычный `TextField` оставил бы курсор на символ левее
+ * конца, и следующие цифры попадали бы в середину числа.
+ */
+@Composable
+private fun GroupedAmountField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    @StringRes labelRes: Int,
+    @StringRes errorRes: Int?,
+    @StringRes hintRes: Int? = null
+) {
+    var fieldValue by remember { mutableStateOf(TextFieldValue(value, TextRange(value.length))) }
+
+    // Значение из состояния формы (например, предзаполнение при редактировании) важнее
+    // локального — синхронизируем поле и ставим курсор в конец
+    if (fieldValue.text != value) {
+        fieldValue = TextFieldValue(value, TextRange(value.length))
+    }
+
+    OutlinedTextField(
+        value = fieldValue,
+        onValueChange = { newValue ->
+            val grouped = MoneyFormatter.groupAmountInput(newValue.text)
+            val cursor = MoneyFormatter.mapCursorAfterGrouping(
+                rawInput = newValue.text,
+                rawCursor = newValue.selection.end,
+                groupedInput = grouped
+            )
+            fieldValue = TextFieldValue(grouped, TextRange(cursor))
+            onValueChange(grouped)
+        },
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(stringResource(labelRes)) },
+        placeholder = { Text(stringResource(R.string.savings_target_optional)) },
+        // Валюта, как в остальных суммах: цифры вводит пользователь
+        suffix = { Text(MoneyFormatter.CURRENCY) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        isError = errorRes != null,
+        supportingText = when {
+            errorRes != null -> {
+                { Text(stringResource(errorRes), color = MaterialTheme.colorScheme.error) }
+            }
+
+            hintRes != null -> {
+                { Text(stringResource(hintRes), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+
+            else -> null
         }
     )
 }

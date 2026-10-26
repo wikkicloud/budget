@@ -122,6 +122,29 @@ object MoneyFormatter {
     }
 
     /**
+     * Пересчитывает позицию курсора после группировки ввода: в сгруппированном тексте
+     * курсор встаёт после того же числа значимых символов (всех, кроме пробелов-разделителей),
+     * которое было перед ним в исходном вводе. Нужно полям суммы: [groupAmountInput] удлиняет
+     * текст разделителем («1000» → «1 000»), и без пересчёта курсор оказывается на символ левее.
+     * @param rawInput ввод до группировки
+     * @param rawCursor позиция курсора в [rawInput]
+     * @param groupedInput результат [groupAmountInput] для [rawInput]
+     * @return позиция курсора в [groupedInput]
+     */
+    fun mapCursorAfterGrouping(rawInput: String, rawCursor: Int, groupedInput: String): Int {
+        val cursor = rawCursor.coerceIn(0, rawInput.length)
+        val significantBeforeCursor = rawInput.take(cursor).count { it != ' ' }
+
+        var seen = 0
+        var index = 0
+        while (index < groupedInput.length && seen < significantBeforeCursor) {
+            if (groupedInput[index] != ' ') seen++
+            index++
+        }
+        return index
+    }
+
+    /**
      * Разбирает введённую сумму в копейки. Без Double/Float — только целые.
      * Принимает "1234", "1 234,50", "1234.5".
      * @return сумма в копейках или null, если ввод не является числом
