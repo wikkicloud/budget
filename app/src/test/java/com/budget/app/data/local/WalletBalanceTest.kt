@@ -153,6 +153,28 @@ class WalletBalanceTest {
     }
 
     @Test
+    fun `two archived wallets still leave the active one in the list`() = runBlocking {
+        // Сценарий бага «экран кошельков пустеет при втором архивном кошельке».
+        val firstId = walletDao.insertWallet(
+            WalletEntity(name = "Карта", type = "CARD", initialBalance = 10_000)
+        )
+        val secondId = walletDao.insertWallet(
+            WalletEntity(name = "Вторая карта", type = "CARD", initialBalance = 20_000)
+        )
+        walletDao.insertWallet(WalletEntity(name = "Наличные", type = "CASH", initialBalance = 5_000))
+
+        walletDao.setWalletArchived(firstId, archived = true)
+        walletDao.setWalletArchived(secondId, archived = true)
+
+        assertEquals(listOf("Наличные"), walletDao.getActiveWalletsWithBalance().first().map { it.name })
+        assertEquals(
+            listOf("Карта", "Вторая карта"),
+            walletDao.getArchivedWalletsWithBalance().first().map { it.name }
+        )
+        assertEquals(5_000L, walletDao.getActiveWalletsWithBalance().first().sumOf { it.balance })
+    }
+
+    @Test
     fun `archived wallet keeps its balance and is excluded from active total`() = runBlocking {
         val walletId = walletDao.insertWallet(WalletEntity(name = "Карта", type = "CARD", initialBalance = 10_000))
         walletDao.insertWallet(WalletEntity(name = "Наличные", type = "CASH", initialBalance = 20_000))

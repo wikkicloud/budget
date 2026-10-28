@@ -96,6 +96,8 @@ data class WalletsUiState(
     val transfers: List<TransferUi> = emptyList(),
     /** Сумма балансов активных кошельков в копейках. */
     val total: Long = 0,
+    /** Раздел «Архив» свёрнут по умолчанию и раскрывается тапом по заголовку. */
+    val archiveExpanded: Boolean = false,
     val isLoading: Boolean = true,
     val form: WalletFormState? = null,
     /** Открытый диалог перевода; null — диалог закрыт. */
@@ -131,6 +133,7 @@ class WalletsViewModel @Inject constructor(
             archivedWallets = mappedArchived,
             transfers = mappedTransfers.take(MAX_VISIBLE_TRANSFERS),
             total = mapped.sumOf { it.balance },
+            archiveExpanded = local.archiveExpanded,
             isLoading = false,
             form = local.form,
             transferForm = local.transferForm,
@@ -335,6 +338,11 @@ class WalletsViewModel @Inject constructor(
 
     // --- Архив ---
 
+    /** Раскрывает/сворачивает раздел «Архив кошельков». */
+    fun onArchiveToggle() {
+        localState.update { it.copy(archiveExpanded = !it.archiveExpanded) }
+    }
+
     /** Убирает кошелёк с экрана и из списков выбора в расходах/доходах/копилках. */
     fun onArchiveClick(wallet: WalletUi) {
         viewModelScope.launch {
@@ -434,5 +442,7 @@ private data class WalletsLocalState(
     /** Имя удаляемого кошелька — его может не быть в списке, если он уже удалён. */
     val deleteTargetName: String? = null,
     val deleteTransferId: Long? = null,
+    /** Раздел «Архив» свёрнут, пока пользователь не раскрыл его тапом. */
+    val archiveExpanded: Boolean = false,
     val message: Message? = null
 )

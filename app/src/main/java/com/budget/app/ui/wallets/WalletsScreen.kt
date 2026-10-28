@@ -1,6 +1,7 @@
 package com.budget.app.ui.wallets
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Payments
@@ -138,7 +141,9 @@ fun WalletsScreen(
                 }
             }
 
-            if (state.wallets.isEmpty() && !state.isLoading) {
+            // Пустой экран показываем, только когда нет ни активных, ни архивных кошельков:
+            // если все ушли в архив, раздел «Архив» должен оставаться доступным для возврата.
+            if (state.wallets.isEmpty() && state.archivedWallets.isEmpty() && !state.isLoading) {
                 EmptyState(modifier = Modifier.fillMaxSize())
             } else {
                 LazyColumn(
@@ -186,25 +191,28 @@ fun WalletsScreen(
                     }
 
                     if (state.archivedWallets.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = stringResource(R.string.wallets_archive_title),
-                                style = MaterialTheme.typography.titleMedium,
+                        item(key = "archive-header") {
+                            ArchiveHeader(
+                                count = state.archivedWallets.size,
+                                expanded = state.archiveExpanded,
+                                onToggle = viewModel::onArchiveToggle,
                                 modifier = Modifier.padding(top = 16.dp)
                             )
                         }
-                        item {
-                            Text(
-                                text = stringResource(R.string.wallets_archive_hint),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        items(state.archivedWallets, key = { "archived-${it.id}" }) { wallet ->
-                            ArchivedWalletRow(
-                                wallet = wallet,
-                                onUnarchiveClick = { viewModel.onUnarchiveClick(wallet) }
-                            )
+                        if (state.archiveExpanded) {
+                            item(key = "archive-hint") {
+                                Text(
+                                    text = stringResource(R.string.wallets_archive_hint),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            items(state.archivedWallets, key = { "archived-${it.id}" }) { wallet ->
+                                ArchivedWalletRow(
+                                    wallet = wallet,
+                                    onUnarchiveClick = { viewModel.onUnarchiveClick(wallet) }
+                                )
+                            }
                         }
                     }
                 }
@@ -368,6 +376,47 @@ private fun WalletRow(
                 }
             }
         }
+    }
+}
+
+/** Заголовок раздела «Архив»: свёрнут по умолчанию, раскрывается тапом. */
+@Composable
+private fun ArchiveHeader(
+    count: Int,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Archive,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(R.string.wallets_archive_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = count.toString(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Icon(
+            imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+            contentDescription = stringResource(R.string.wallets_archive_title),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
