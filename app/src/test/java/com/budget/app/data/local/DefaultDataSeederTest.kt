@@ -124,20 +124,25 @@ class DefaultDataSeederTest {
     }
 
     /**
-     * Баг: файл базы со старой версией схемы открывается новой версией приложения. Миграций нет
-     * (до релиза их не пишем), значит Room пересоздаёт таблицы разрушающе — категории и кошельки
-     * должны появиться снова.
+     * Файл базы с чужой версией схемы открывается приложением без миграции. Деструктивного
+     * fallback больше нет (первый релиз: схема зафиксирована версией 1), значит открытие
+     * должно упасть с исключением, а данные — не стираются молча.
      */
     @Test
-    fun `defaults are restored after destructive migration`() = runBlocking {
+    fun `database with unknown version fails to open instead of wiping data`() {
         val file = context.getDatabasePath(dbName)
         file.parentFile?.mkdirs()
         writeLegacyDatabaseFile(file, version = 3)
 
         database = productiveDatabase()
-
-        awaitDefaults(database)
-        assertTrue("старая таблица должна быть удалена", !tableExists(file, "legacy_table"))
+        try {
+            database.openHelper.readableDatabase // форсируем открытие базы
+            throw AssertionError("открытие базы без миграции должно упасть")
+        } catch (expected: IllegalStateException) {
+            // Room требует миграцию 3 → 1, её нет — исключение ожидаемо
+            assertTrue(expected.message.orEmpty().contains("migration", ignoreCase = true))
+        }
+        assertTrue("данные старой базы должны остаться на месте", tableExists(file, "legacy_table"))
     }
 
     private fun inMemoryDatabase(): BudgetDatabase =
@@ -148,7 +153,6 @@ class DefaultDataSeederTest {
     /** База с той же конфигурацией, что и в `DatabaseModule`. */
     private fun productiveDatabase(): BudgetDatabase =
         Room.databaseBuilder(context, BudgetDatabase::class.java, dbName)
-            .fallbackToDestructiveMigration(dropAllTables = true)
             .addCallback(
                 DefaultDataSeeder.callback(
                     context,

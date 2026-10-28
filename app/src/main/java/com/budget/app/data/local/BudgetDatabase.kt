@@ -23,9 +23,10 @@ import com.budget.app.data.local.entity.WalletEntity
         SavingsEntity::class,
         SavingsOperationEntity::class
     ],
-    // 7 — архив кошелька (`wallets.archived`). Миграция не пишется: до релиза схему
-    // меняем напрямую (см. CLAUDE.md), тестовые данные при обновлении стираются.
-    version = 7,
+    // 1 — базовая версия первого релиза: текущая схема зафиксирована как исходная.
+    // С этого момента любое изменение сущностей требует миграции и повышения версии,
+    // иначе открытие базы упадёт вместо тихой потери данных (см. CLAUDE.md).
+    version = 1,
     exportSchema = false
 )
 abstract class BudgetDatabase : RoomDatabase() {

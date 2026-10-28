@@ -33,9 +33,9 @@ object DatabaseModule {
             BudgetDatabase::class.java,
             "budget_database"
         )
-            // До первого релиза миграции не пишем: схема меняется напрямую, старая база
-            // пересоздаётся, тестовые данные стираются. Перед релизом — заменить на миграции.
-            .fallbackToDestructiveMigration(dropAllTables = true)
+            // Схема зафиксирована версией 1 (первый релиз). Деструктивного fallback больше
+            // нет: любое изменение сущностей требует миграции, иначе открытие базы упадёт
+            // с исключением — данные пользователей не стираются молча.
             .addCallback(DefaultDataSeeder.callback(context, categoryDaoProvider, walletDaoProvider))
             .build()
     }
