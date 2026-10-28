@@ -232,7 +232,7 @@ class SavingsEditTest {
         savingsDao.getSavingsWithBalance().first().first { it.id == savingsId }.balance
 
     private suspend fun walletBalanceOf(walletId: Long): Long =
-        walletDao.getAllWalletsWithBalance().first().first { it.id == walletId }.balance
+        walletDao.getActiveWalletsWithBalance().first().first { it.id == walletId }.balance
 
     private fun operation(
         savingsId: Long,

@@ -18,7 +18,7 @@ import org.robolectric.annotation.Config
 
 /**
  * Проверяет расчёт баланса кошелька на настоящем SQLite: баланс считается запросом
- * [WalletDao.getAllWalletsWithBalance], а не хранится отдельно.
+ * [WalletDao.getActiveWalletsWithBalance], а не хранится отдельно.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -106,7 +106,7 @@ class WalletBalanceTest {
         walletDao.insertWallet(WalletEntity(name = "Наличные", type = "CASH", initialBalance = 20_000))
         transactionDao.insertTransaction(expense(firstId, 4_000))
 
-        val total = walletDao.getAllWalletsWithBalance().first().sumOf { it.balance }
+        val total = walletDao.getActiveWalletsWithBalance().first().sumOf { it.balance }
 
         assertEquals(26_000L, total)
     }
@@ -123,8 +123,50 @@ class WalletBalanceTest {
         assertEquals(10_000L, balanceOf(walletId))
     }
 
+    // --- Архив кошелька ---
+
+    @Test
+    fun `archived wallet disappears from active list and appears in archived`() = runBlocking {
+        val walletId = walletDao.insertWallet(
+            WalletEntity(name = "Карта", type = "CARD", initialBalance = 10_000)
+        )
+        walletDao.insertWallet(WalletEntity(name = "Наличные", type = "CASH", initialBalance = 5_000))
+
+        walletDao.setWalletArchived(walletId, archived = true)
+
+        assertEquals(listOf("Наличные"), walletDao.getActiveWalletsWithBalance().first().map { it.name })
+        assertEquals(listOf("Карта"), walletDao.getArchivedWalletsWithBalance().first().map { it.name })
+        assertEquals(listOf("Наличные"), walletDao.getAllWallets().first().map { it.name })
+    }
+
+    @Test
+    fun `unarchiving returns the wallet to the active list`() = runBlocking {
+        val walletId = walletDao.insertWallet(
+            WalletEntity(name = "Карта", type = "CARD", initialBalance = 10_000)
+        )
+
+        walletDao.setWalletArchived(walletId, archived = true)
+        walletDao.setWalletArchived(walletId, archived = false)
+
+        assertEquals(listOf("Карта"), walletDao.getActiveWalletsWithBalance().first().map { it.name })
+        assertEquals(0, walletDao.getArchivedWalletsWithBalance().first().size)
+    }
+
+    @Test
+    fun `archived wallet keeps its balance and is excluded from active total`() = runBlocking {
+        val walletId = walletDao.insertWallet(WalletEntity(name = "Карта", type = "CARD", initialBalance = 10_000))
+        walletDao.insertWallet(WalletEntity(name = "Наличные", type = "CASH", initialBalance = 20_000))
+        transactionDao.insertTransaction(income(walletId, 5_000))
+        transactionDao.insertTransaction(expense(walletId, 3_000))
+
+        walletDao.setWalletArchived(walletId, archived = true)
+
+        assertEquals(12_000L, walletDao.getArchivedWalletsWithBalance().first().single().balance)
+        assertEquals(20_000L, walletDao.getActiveWalletsWithBalance().first().sumOf { it.balance })
+    }
+
     private suspend fun balanceOf(walletId: Long): Long =
-        walletDao.getAllWalletsWithBalance().first().first { it.id == walletId }.balance
+        walletDao.getActiveWalletsWithBalance().first().first { it.id == walletId }.balance
 
     private fun income(walletId: Long, amount: Long) = TransactionEntity(
         type = "INCOME",

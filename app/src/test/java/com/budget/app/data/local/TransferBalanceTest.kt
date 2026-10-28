@@ -21,7 +21,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Переводы между кошельками: балансы считаются запросом [WalletDao.getAllWalletsWithBalance],
+ * Переводы между кошельками: балансы считаются запросом [WalletDao.getActiveWalletsWithBalance],
  * итог по всем кошелькам при переводе не меняется, а доходы и расходы перевод не затрагивают.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -159,10 +159,10 @@ class TransferBalanceTest {
         )
 
     private suspend fun balanceOf(walletId: Long): Long =
-        walletDao.getAllWalletsWithBalance().first().first { it.id == walletId }.balance
+        walletDao.getActiveWalletsWithBalance().first().first { it.id == walletId }.balance
 
     private suspend fun total(): Long =
-        walletDao.getAllWalletsWithBalance().first().sumOf { it.balance }
+        walletDao.getActiveWalletsWithBalance().first().sumOf { it.balance }
 
     private fun transfer(
         fromWalletId: Long,
