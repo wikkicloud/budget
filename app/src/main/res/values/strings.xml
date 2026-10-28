@@ -33,6 +33,13 @@
     <string name="wallet_delete_has_transactions">Нельзя удалить кошелёк «%1$s»: по нему есть операции</string>
     <string name="wallet_error_name">Введите название</string>
     <string name="wallet_error_amount">Введите сумму без отрицательных значений</string>
+    <string name="wallet_actions">Действия с кошельком</string>
+    <string name="wallet_archive">В архив</string>
+    <string name="wallet_unarchive">Из архива</string>
+    <string name="wallets_archive_title">Архив кошельков</string>
+    <string name="wallets_archive_hint">Архивные кошельки не видны в списке и недоступны в расходах и доходах</string>
+    <string name="wallet_archived">Кошелёк перемещён в архив</string>
+    <string name="wallet_unarchived">Кошелёк возвращён из архива</string>
     <string name="wallets_empty">Кошельков пока нет</string>
     <string name="wallets_empty_hint">Нажмите «+», чтобы добавить первый кошелёк</string>
 

@@ -7,5 +7,6 @@ data class WalletWithBalance(
     val name: String,
     val type: String,
     val initialBalance: Long,
+    val archived: Boolean = false,
     val balance: Long
 )

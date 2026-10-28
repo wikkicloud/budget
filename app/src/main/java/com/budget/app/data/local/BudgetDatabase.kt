@@ -23,9 +23,9 @@ import com.budget.app.data.local.entity.WalletEntity
         SavingsEntity::class,
         SavingsOperationEntity::class
     ],
-    // 6 — стартовая сумма копилки (`savings.initialAmount`). Миграция не пишется: до релиза схему
+    // 7 — архив кошелька (`wallets.archived`). Миграция не пишется: до релиза схему
     // меняем напрямую (см. CLAUDE.md), тестовые данные при обновлении стираются.
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class BudgetDatabase : RoomDatabase() {

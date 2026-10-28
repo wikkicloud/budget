@@ -13,8 +13,17 @@ class WalletRepository @Inject constructor(
 ) {
     fun getAllWallets(): Flow<List<WalletEntity>> = walletDao.getAllWallets()
 
-    /** Кошельки вместе с посчитанным балансом. */
-    fun getWalletsWithBalance(): Flow<List<WalletWithBalance>> = walletDao.getAllWalletsWithBalance()
+    /** Активные (неархивные) кошельки вместе с посчитанным балансом. */
+    fun getActiveWalletsWithBalance(): Flow<List<WalletWithBalance>> =
+        walletDao.getActiveWalletsWithBalance()
+
+    /** Архивные кошельки вместе с балансом. */
+    fun getArchivedWalletsWithBalance(): Flow<List<WalletWithBalance>> =
+        walletDao.getArchivedWalletsWithBalance()
+
+    /** Архивирует кошелёк или возвращает его из архива — операция обратима. */
+    suspend fun setWalletArchived(id: Long, archived: Boolean) =
+        walletDao.setWalletArchived(id, archived)
 
     suspend fun getWalletById(id: Long): WalletEntity? = walletDao.getWalletById(id)
 

@@ -8,5 +8,7 @@ data class WalletEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val type: String, // "CARD" или "CASH"
-    val initialBalance: Long // в копейках
+    val initialBalance: Long, // в копейках
+    /** Архивный кошелёк скрыт на экране «Кошельки» и недоступен для выбора в операциях. */
+    val archived: Boolean = false
 )

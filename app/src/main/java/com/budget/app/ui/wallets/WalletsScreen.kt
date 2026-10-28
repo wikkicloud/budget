@@ -18,8 +18,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -76,6 +78,8 @@ fun WalletsScreen(
             resources.getString(R.string.wallet_delete_has_transactions, message.walletName)
         Message.TransferSaved -> resources.getString(R.string.transfer_saved)
         Message.TransferDeleted -> resources.getString(R.string.transfer_deleted)
+        Message.WalletArchived -> resources.getString(R.string.wallet_archived)
+        Message.WalletUnarchived -> resources.getString(R.string.wallet_unarchived)
     }
 
     messageText?.let { text ->
@@ -151,6 +155,7 @@ fun WalletsScreen(
                         WalletRow(
                             wallet = wallet,
                             onEditClick = { viewModel.onEditClick(wallet) },
+                            onArchiveClick = { viewModel.onArchiveClick(wallet) },
                             onDeleteClick = { viewModel.onDeleteClick(wallet) }
                         )
                     }
@@ -176,6 +181,29 @@ fun WalletsScreen(
                             TransferRow(
                                 transfer = transfer,
                                 onDeleteClick = { viewModel.onDeleteTransferClick(transfer) }
+                            )
+                        }
+                    }
+
+                    if (state.archivedWallets.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.wallets_archive_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(top = 16.dp)
+                            )
+                        }
+                        item {
+                            Text(
+                                text = stringResource(R.string.wallets_archive_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        items(state.archivedWallets, key = { "archived-${it.id}" }) { wallet ->
+                            ArchivedWalletRow(
+                                wallet = wallet,
+                                onUnarchiveClick = { viewModel.onUnarchiveClick(wallet) }
                             )
                         }
                     }
@@ -257,6 +285,7 @@ private fun TotalCard(
 private fun WalletRow(
     wallet: WalletUi,
     onEditClick: () -> Unit,
+    onArchiveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -303,11 +332,92 @@ private fun WalletRow(
                 )
             }
 
-            IconButton(onClick = onDeleteClick) {
-                Icon(
-                    imageVector = Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.action_delete)
+            // Меню строки: «В архив» и «Удалить» — как у своих категорий.
+            Box {
+                var menuExpanded by remember { mutableStateOf(false) }
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.wallet_actions)
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.wallet_archive)) },
+                        leadingIcon = {
+                            Icon(Icons.Filled.Archive, contentDescription = null)
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onArchiveClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_delete)) },
+                        leadingIcon = {
+                            Icon(Icons.Filled.Delete, contentDescription = null)
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onDeleteClick()
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Строка архивного кошелька: только баланс и возврат из архива. */
+@Composable
+private fun ArchivedWalletRow(
+    wallet: WalletUi,
+    onUnarchiveClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = when (wallet.type) {
+                    WalletType.CARD -> Icons.Filled.AccountBalanceWallet
+                    WalletType.CASH -> Icons.Filled.Payments
+                },
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = wallet.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Text(
+                    text = stringResource(wallet.type.labelRes),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Text(
+                text = MoneyFormatter.format(wallet.balance),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            TextButton(onClick = onUnarchiveClick) {
+                Text(stringResource(R.string.wallet_unarchive))
             }
         }
     }

@@ -29,6 +29,8 @@ data class WalletUi(
     val type: WalletType,
     /** Начальный баланс в копейках — нужен для заполнения формы редактирования. */
     val initialBalance: Long,
+    /** Архивный кошелёк скрыт в основном списке и недоступен для выбора в операциях. */
+    val archived: Boolean = false,
     /** Текущий баланс в копейках: начальный + доходы − расходы + переводы. */
     val balance: Long
 )
@@ -77,14 +79,22 @@ sealed interface Message {
 
     /** Перевод удалён. */
     data object TransferDeleted : Message
+
+    /** Кошелёк убран в архив. */
+    data object WalletArchived : Message
+
+    /** Кошелёк возвращён из архива. */
+    data object WalletUnarchived : Message
 }
 
 /** Единственное состояние экрана «Кошельки». */
 data class WalletsUiState(
     val wallets: List<WalletUi> = emptyList(),
+    /** Архивные кошельки — отдельный раздел внизу экрана. */
+    val archivedWallets: List<WalletUi> = emptyList(),
     /** Последние переводы между кошельками. */
     val transfers: List<TransferUi> = emptyList(),
-    /** Сумма балансов всех кошельков в копейках. */
+    /** Сумма балансов активных кошельков в копейках. */
     val total: Long = 0,
     val isLoading: Boolean = true,
     val form: WalletFormState? = null,
@@ -108,14 +118,17 @@ class WalletsViewModel @Inject constructor(
     private val localState = MutableStateFlow(WalletsLocalState())
 
     val uiState: StateFlow<WalletsUiState> = combine(
-        walletRepository.getWalletsWithBalance(),
+        walletRepository.getActiveWalletsWithBalance(),
+        walletRepository.getArchivedWalletsWithBalance(),
         transferRepository.getTransfersWithDetails(),
         localState
-    ) { wallets, transfers, local ->
-        val mapped = wallets.map { it.toUi() }
+    ) { active, archived, transfers, local ->
+        val mapped = active.map { it.toUi() }
+        val mappedArchived = archived.map { it.toUi() }
         val mappedTransfers = transfers.map { it.toUi() }
         WalletsUiState(
             wallets = mapped,
+            archivedWallets = mappedArchived,
             transfers = mappedTransfers.take(MAX_VISIBLE_TRANSFERS),
             total = mapped.sumOf { it.balance },
             isLoading = false,
@@ -320,6 +333,24 @@ class WalletsViewModel @Inject constructor(
         }
     }
 
+    // --- Архив ---
+
+    /** Убирает кошелёк с экрана и из списков выбора в расходах/доходах/копилках. */
+    fun onArchiveClick(wallet: WalletUi) {
+        viewModelScope.launch {
+            walletRepository.setWalletArchived(wallet.id, archived = true)
+            localState.update { it.copy(message = Message.WalletArchived) }
+        }
+    }
+
+    /** Возвращает кошелёк из архива — операция обратима. */
+    fun onUnarchiveClick(wallet: WalletUi) {
+        viewModelScope.launch {
+            walletRepository.setWalletArchived(wallet.id, archived = false)
+            localState.update { it.copy(message = Message.WalletUnarchived) }
+        }
+    }
+
     // --- Удаление ---
 
     fun onDeleteClick(wallet: WalletUi) {
@@ -376,6 +407,7 @@ class WalletsViewModel @Inject constructor(
         name = name,
         type = WalletType.entries.firstOrNull { it.name == type } ?: WalletType.CARD,
         initialBalance = initialBalance,
+        archived = archived,
         balance = balance
     )
 

@@ -141,7 +141,7 @@ class SavingsViewModel @Inject constructor(
 
     val uiState: StateFlow<SavingsUiState> = combine(
         savingsRepository.getSavingsWithBalance(),
-        walletRepository.getWalletsWithBalance(),
+        walletRepository.getActiveWalletsWithBalance(),
         savingsRepository.getOperationsWithDetails(),
         localState
     ) { savings, wallets, operations, local ->
